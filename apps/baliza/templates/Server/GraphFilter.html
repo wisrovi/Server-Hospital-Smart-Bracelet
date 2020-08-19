@@ -1,0 +1,179 @@
+{% extends 'MENU_OPCIONES/LAYOUT.html' %}
+{% load static %}
+
+{% block head %}
+    {% include 'JS/JS_SELECT2.html' %}
+{% endblock %}
+
+{% block content %}
+    <form action=".." method="post">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-plus"></i>
+                    {{ title }}
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label>Sedes</label>
+                    {{ form.sede }}
+                </div>
+                <div class="form-group">
+                    <label>Piso</label>
+                    {{ form.ubicacion }}
+                </div>
+                <div id="series_chart_div" style="width: 1080px; height: 600px;"></div>
+            </div>
+        </div>
+    </form>
+
+{% endblock %}
+
+{% block javascript %}
+    {% include 'JS/JS_CHART.html' %}
+    <script type="text/javascript">
+        google.charts.load('current', {'packages': ['corechart']});
+
+        var optionsChart = {
+            title: 'Listado de Balizas y Manillas',
+            hAxis: {
+                title: 'Distancia en metros eje X'
+            },
+            vAxis: {
+                title: 'Distancia en metros eje Y'
+            },
+            series: {
+                'Baliza': {
+                    color: "#98183a"
+                },
+                'Manilla': {
+                    color: "#f7aa3b"
+                }
+            },
+            bubble: {
+                textStyle: {
+                    fontSize: 11
+                }
+            },
+            //chartArea:{left:200,top:100,width:'80%',height:'60%'}
+        };
+
+        var dataCharArray = [['Nombre', 'X', 'Y', 'Tipo'],];
+
+        var select_sede = $('select[name="sede"]');
+        var select_ubicacion = $('select[name="ubicacion"]');
+        $(function () {
+            select_ubicacion.on('change', function () {
+                var id = $(this).val();
+                var options = '<option value"">------------------</option>';
+                if (id === "") {
+                    select_ubicacion.html(options);
+                    return false;
+                }
+                $.ajax({
+                    url: window.location.pathname,
+                    type: 'POST',
+                    data: {
+                        'action': 'graph_ubicacion',
+                        'id': id
+                    },
+                    dataType: 'json',
+                }).done(function (data) {
+                    if (!data.hasOwnProperty('error')) {
+                        //Proceso cuando se elije una ubicacion (después de tener una respuesta
+                        dataCharArray = [
+                            ['Nombre', 'X', 'Y', 'Tipo'],
+                        ];
+                        if (data.hasOwnProperty('todasBalizas')) {
+                            data['todasBalizas'].forEach(function (elemento) {
+                                dataCharArray[dataCharArray.length] = elemento;
+                            });
+                        }
+                        if (data.hasOwnProperty('todasPulseras')) {
+                            data['todasPulseras'].forEach(function (elemento) {
+                                dataCharArray[dataCharArray.length] = elemento;
+                            });
+                        }
+
+                        if(data['todasBalizas'].length > 0 && data['todasPulseras'].length > 0){
+                            google.charts.load('current', {
+                                    'packages': ['corechart']
+                                }
+                            );
+                            google.charts.setOnLoadCallback(drawSeriesChart);
+                        }else{
+                            if(data['todasBalizas'].length === 0 && data['todasPulseras'].length === 0){
+                                MensajeAlerta("No hay Datos para mostrar");
+                            }else{
+                                if(data['todasBalizas'].length === 0){
+                                    MensajeAlerta("No hay Balizas para mostrar");
+                                }
+                                if(data['todasPulseras'].length === 0){
+                                    MensajeAlerta("No hay Historial de datos de Pulseras para mostrar.");
+                                }
+                            }
+                        }
+                        return false;
+                    } else {
+                        MensajeError(data['error']);
+                    }
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    MensajeError(textStatus + ': ' + errorThrown);
+                }).always(function (data) {
+
+                });
+            });
+
+            select_sede.on('change', function () {
+                var id = $(this).val();
+                var options = '<option value"">------------------</option>';
+                if (id === "") {
+                    select_ubicacion.html(options);
+                    return false;
+                }
+                $.ajax({
+                    url: window.location.pathname,
+                    type: 'POST',
+                    data: {
+                        'action': 'search_ubicacion',
+                        'id': id
+                    },
+                    dataType: 'json',
+                }).done(function (data) {
+                    if (!data.hasOwnProperty('error')) {
+                        select_ubicacion.html('').select2({
+                            theme: "bootstrap4",
+                            language: 'es',
+                            data: data
+                        });
+                        return false;
+                    }
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    MensajeError(textStatus + ': ' + errorThrown);
+                }).always(function (data) {
+
+                });
+            });
+        });
+
+        function drawSeriesChart() {
+            {#var data = google.visualization.arrayToDataTable([#}
+            {#    ['Nombre', 'X', 'Y', 'Tipo'],#}
+            {#    {% for thisBaliza in todasBalizas %}#}
+            {#        ['{{ thisBaliza.name }}', {{ thisBaliza.x }}, {{ thisBaliza.y }}, '{{ thisBaliza.tipo }}'],#}
+            {#    {% endfor %}#}
+            {#    {% for thisPulsera in todasPulseras %}#}
+            {#        ['{{ thisPulsera.name }}', Math.round({{ thisPulsera.x }}), Math.round({{ thisPulsera.y }}), '{{ thisPulsera.tipo }}'],#}
+            {#    {% endfor %}#}
+            {#])  ;#}
+            var chart = new google.visualization.BubbleChart(document.getElementById('series_chart_div'));
+            var dataChart = google.visualization.arrayToDataTable(dataCharArray);
+            chart.draw(dataChart, optionsChart);
+        }
+    </script>
+{% endblock %}
+
+
+
+

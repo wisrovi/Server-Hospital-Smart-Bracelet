@@ -1,0 +1,149 @@
+{% load static %}
+<!-- Navbar -->
+<nav class="main-header navbar navbar-expand navbar-dark navbar-primary">
+    <div class="container">
+        <a href="#" class="navbar-brand">
+            <!--  https://stock.adobe.com/es/images/id/268296221?as_campaign=Flaticon&as_content=api&as_audience=404&tduid=1bb29a1b46c1da4978db2502e0e7298d&as_channel=affiliate&as_campclass=redirect&as_source=arvato&asset_id=267098329  -->
+            <img src="{% static 'images/bracelet.png' %}" alt="AdminLTE Logo"
+                 class="brand-image"
+                 style="opacity: .8">
+            <span class="brand-text font-weight-light">{{ PROJECT }}</span>
+        </a>
+        {#        <button class="navbar-toggler order-1" type="button" data-toggle="collapse" data-target="#navbarCollapse"#}
+        {#                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" value="153">#}
+        {#            <span class="navbar-toggler-icon"></span>#}
+        {#        </button>#}
+        <div class="collapse navbar-collapse order-3" id="navbarCollapse">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a href="{% url 'home' %}" class="nav-link"><i class="fas fa-home"></i> Home</a>
+                </li>
+                {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a id="dropdownSubMenu1" href="#" data-toggle="dropdown" aria-haspopup="true"
+                           aria-expanded="false"
+                           class="nav-link dropdown-toggle"><i class="fas fa-folder-open"></i> Mantenimientos</a>
+                        <ul aria-labelledby="dropdownSubMenu1" class="dropdown-menu border-0 shadow">
+                            <li><a href="{% url 'project:form_readlist_sede' %}" class="dropdown-item"><i
+                                    class="fas fa-hospital"></i> Sedes</a></li>
+                            <li><a href="{% url 'project:form_readlist_piso' %}" class="dropdown-item"><i
+                                    class="fas fa-map-marked-alt"></i> Pisos por sede</a></li>
+                            <li><a href="{% url 'project:form_readlist_area' %}" class="dropdown-item"><i
+                                    class="fas fa-vector-square"></i> Areas por piso en sede</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a id="dropdownSubMenu1" href="#" data-toggle="dropdown" aria-haspopup="true"
+                           aria-expanded="false"
+                           class="nav-link dropdown-toggle"><i class="fas fa-folder-open"></i> Hardware</a>
+                        <ul aria-labelledby="dropdownSubMenu1" class="dropdown-menu border-0 shadow">
+                            <li><a href="{% url 'project:form_readlist_bracelet' %}" class="dropdown-item"><i
+                                    class="fas fa-heartbeat"></i> Bracelets</a></li>
+                            <li><a href="{% url 'project:form_readlist_baliza' %}" class="dropdown-item"><i
+                                    class="fas fa-broadcast-tower"></i> Balizas</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a id="dropdownSubMenu1" href="#" data-toggle="dropdown" aria-haspopup="true"
+                           aria-expanded="false"
+                           class="nav-link dropdown-toggle"><i class="fas fa-folder-open"></i> Reportes</a>
+                        <ul aria-labelledby="dropdownSubMenu1" class="dropdown-menu border-0 shadow">
+                            <li><a href="{% url 'project:form_read_historial_ubicacion' %}" class="dropdown-item"><i
+                                    class="fas fa-satellite-dish"></i>
+                                Historial Ubicaciones
+                            </a></li>
+                            <li><a href="{% url 'project:form_read_historial_sensores' %}" class="dropdown-item"><i
+                                    class="fas fa-hospital-user"></i>
+                                Historial sensores
+                            </a></li>
+                            <li><a href="{% url 'project:form_readlist_rssi' %}" class="dropdown-item"><i
+                                    class="fas fa-rss-square"></i>
+                                Historial RSSI
+                                {#                                Falta icono de grafico#}
+                            </a></li>
+                            <li><a href="{% url 'project:filtro_graph_posicion' %}" class="dropdown-item"><i
+                                    class="fas fa-hospital-user"></i>
+                                Grafica en tiempo real pulseras - balizas
+                                {#                                Falta icono de grafico#}
+                            </a></li>
+                        </ul>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+        {% if user.is_authenticated %}
+            <ul class="order-1 order-md-3 navbar-nav navbar-no-expand ml-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link" data-toggle="dropdown" href="#">
+                        <i class="fas fa-users-cog"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                        <span class="dropdown-item" style="text-align: center">
+                            {{ user }}
+                        </span>
+                        <div class="dropdown-divider"></div>
+                        <span class="dropdown-header">
+                            Último Acceso: 12 de Abril de 2020
+                        </span>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-edit mr-2"></i> Editar perfil
+                            <span class="float-right text-muted text-sm">3 mins</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-lock mr-2"></i> Editar password
+                            <span class="float-right text-muted text-sm">12 hours</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item dropdown-footer">
+                            <p>Este sistema te permitira realizar diferentes actividades</p>
+                        </a>
+                    </div>
+                </li>
+                <li class="nav-item">
+                    <a id="cerrar_sesion" type="button" class="nav-link" href="#">
+                        <i class="fas fa-power-off" aria-hidden="true"></i>
+                    </a>
+                </li>
+            </ul>
+        {% endif %}
+
+    </div>
+</nav>
+
+<script type="text/javascript">
+    $('#cerrar_sesion').click(function () {
+        const swalWithBootstrapButtons = Swal.mixin({
+            customClass: {
+                confirmButton: 'btn btn-success',
+                cancelButton: 'btn btn-danger'
+            },
+            buttonsStyling: false
+        })
+
+        swalWithBootstrapButtons.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'No, cancel!',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.value) {
+                window.location.href = '{% url 'signout' %}';
+            } else if (
+                /* Read more about handling dismissals below */
+                result.dismiss === Swal.DismissReason.cancel
+            ) {
+                Swal.fire({
+                    title: 'Información!',
+                    text: `Su cuenta permanecerá abierta`,
+                    type: 'info',
+                    timer: 2500
+                });
+            }
+        });
+    });
+</script>

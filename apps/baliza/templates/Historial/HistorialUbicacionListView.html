@@ -1,0 +1,38 @@
+{% extends 'LIST.html' %}
+{% load static %}
+
+{% block columns %}
+    <tr>
+        <th scope="col" style="width: 10%;">Nro</th>
+        <th scope="col" style="width: 20%;">Bracelet</th>
+        <th scope="col" style="width: 20%;">Area</th>
+        <th scope="col" style="width: 25%;">Fecha Ingreso Area</th>
+        <th scope="col" style="width: 25%;">Fecha Salida Area</th>
+    </tr>
+{% endblock %}
+
+{% block rows %}
+    {% for object in object_list %}
+        <tr>
+            <td>
+                {{ object.id }}
+            </td>
+            <td>
+                {{ object.bracelet }}
+            </td>
+            <td>
+                {{ object.area }}
+            </td>
+            <td>
+                {{ object.fechaIngresoArea }}
+            </td>
+            <td>
+                {{ object.fechaSalidaArea }}
+            </td>
+        </tr>
+    {% endfor %}
+{% endblock %}
+
+{% block botonCrear %}
+
+{% endblock %}

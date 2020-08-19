@@ -1,0 +1,9 @@
+{% extends 'FORM.html' %}
+
+{% block botonesAdicionales %}
+    <a href="{% url 'project:form_update_baliza_instalacion' idInstalacionBaliza %}" class="btn btn-block btn-flat"
+            style="border-radius: 5px;">
+        <i class="fas fa-edit"></i> Opciones Avanzadas
+    </a>
+{% endblock %}
+

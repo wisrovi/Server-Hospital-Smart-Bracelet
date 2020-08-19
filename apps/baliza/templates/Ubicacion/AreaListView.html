@@ -1,0 +1,59 @@
+{% extends 'LIST.html' %}
+{% load static %}
+
+{% block columns %}
+    <tr>
+        <th scope="col" style="width: 10%;">Nro</th>
+        <th scope="col" style="width: 15%;">Piso</th>
+        <th scope="col" style="width: 15%;">Area</th>
+        <th scope="col" style="width: 5%;">Ubicación X inicial</th>
+        <th scope="col" style="width: 5%;">Ubicación X final</th>
+        <th scope="col" style="width: 5%;">Ubicación Y inicial</th>
+        <th scope="col" style="width: 5%;">Ubicación Y final</th>
+        <th scope="col" style="width: 30%;">Descripción</th>
+        <th scope="col" style="width: 10%;">Opciones</th>
+    </tr>
+{% endblock %}
+
+{% block rows %}
+    {% for object in object_list %}
+        <tr>
+            <td>
+                {{ object.id }}
+            </td>
+            <td>
+                {{ object.piso }}
+            </td>
+            <td>
+                {{ object.area }}
+            </td>
+            <td>
+                {{ object.xInicial }}
+            </td>
+            <td>
+                {{ object.xFinal }}
+            </td>
+            <td>
+                {{ object.yInicial }}
+            </td>
+            <td>
+                {{ object.yFinal }}
+            </td>
+            <td>
+                {{ object.descripcion }}
+            </td>
+            <td>
+               <a href="{% url 'project:form_update_area' object.id %}" class="btn btn-warning btn-xs btn-flat">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <a href="{% url 'project:form_delete_area' object.id %}" class="btn btn-danger btn-xs btn-flat">
+                    <i class="fas fa-trash-alt"></i>
+                </a>
+            </td>
+        </tr>
+    {% endfor %}
+{% endblock %}
+
+{% block javascript %}
+
+{% endblock %}

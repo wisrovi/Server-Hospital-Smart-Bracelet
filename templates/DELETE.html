@@ -1,0 +1,112 @@
+{% extends 'MENU_OPCIONES/LAYOUT.html' %}
+{% block content %}
+    <form method="post" action=".">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-trash"></i>
+                    {{ title }}
+                </h3>
+            </div>
+            <div class="card-body">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="{{ action }}">
+                {% if form.errors %}
+                    <div class="alert alert-danger alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                        <h5><i class="icon fas fa-ban"></i> Ha ocurrido un error al querer guardar el registro</h5>
+                        <ul>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                <div class="alert alert-danger alert-dismissible">
+                    <h5><i class="icon fas fa-ban"></i> Notificación!</h5>
+                    ¿Estas seguro de eliminar el registro: <strong style="font-size: 20px;" ">{{ textoMostrar }}</strong> (id={{ object.id }}  )?
+
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary btn-flat">
+                    <i class="fas fa-save"></i> Si, aceptar
+                </button>
+                <a href="{{ list_url }}" class="btn btn-info btn-flat">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+        </div>
+    </form>
+    <script>
+        $('form').on('submit', function (e) {
+            var parameters = $(this).serializeArray();
+            e.preventDefault();
+
+            const swalWithBootstrapButtons = Swal.mixin({
+                customClass: {
+                    confirmButton: 'btn btn-success',
+                    cancelButton: 'btn btn-danger'
+                },
+                buttonsStyling: false
+            })
+
+            swalWithBootstrapButtons.fire({
+                title: '¿Esta usted seguro?',
+                text: "¿Esta seguro que desea borrar este registro?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Si, borrar!',
+                cancelButtonText: 'No, cancelar!',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.value) {
+                    $.ajax({
+                        url: window.location.pathname,
+                        type: 'POST',
+                        data: parameters,
+                        dataType: 'json'
+                    }).done(function (data) {
+                        console.log(data);
+                        if (!data.hasOwnProperty('error')) {
+                            location.href = '{{ list_url }}';
+                            return false;
+                        } else {
+                            if (data.hasOwnProperty('redirec')) {
+                                swalWithBootstrapButtons.fire(
+                                    'Deleted!',
+                                    'Su archivo fue eliminado correctamente.',
+                                    'success'
+                                ).then((result) => {
+                                    if (result.value) {
+                                        setTimeout(() => {
+                                            window.location.href = data['redirec'];
+                                        }, 2000);
+                                        return false;
+                                    }
+                                });
+                            }
+                        }
+                        MensajeError(data.error);
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                        alert(textStatus + ': ' + errorThrown);
+                    }).always(function (data) {
+
+                    });
+                } else if (
+                    result.dismiss === Swal.DismissReason.cancel
+                ) {
+                    swalWithBootstrapButtons.fire(
+                        'Cancelled',
+                        'Su Registro no fue eliminado.',
+                        'error'
+                    )
+                }
+            })
+
+
+        });
+    </script>
+{% endblock %}

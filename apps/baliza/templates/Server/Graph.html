@@ -1,0 +1,67 @@
+{% extends 'MENU_OPCIONES/LAYOUT.html' %}
+{% load static %}
+
+{% block head %}
+    {% include 'JS/JS_SELECT2.html' %}
+{% endblock %}
+
+{% block Header %}
+
+{% endblock %}
+
+{% block cabecero %}
+
+{% endblock %}
+
+{% block content %}
+    <form action=".." method="post">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-project-diagram"></i>
+                    {{ title }}
+                </h3>
+            </div>
+            <div class="card-body">
+                <div id="series_chart_div" style="width: 1080px; height: 600px;"></div>
+            </div>
+        </div>
+    </form>
+
+{% endblock %}
+
+{% block javascript %}
+    {% include 'JS/JS_CHART.html' %}
+    <script type="text/javascript">
+        google.charts.load('current', { 'packages': ['corechart'] });
+        google.charts.setOnLoadCallback(drawSeriesChart);
+
+        function drawSeriesChart() {
+            var chart = new google.visualization.BubbleChart(document.getElementById('series_chart_div'));
+            var dataChart = google.visualization.arrayToDataTable([
+                ['Nombre', 'X', 'Y', 'Tipo'],
+                {% for thisBaliza in todasBalizas %}
+                    ['{{ thisBaliza.name }}', {{ thisBaliza.x }}, {{ thisBaliza.y }}, '{{ thisBaliza.tipo }}'],
+                {% endfor %}
+                {% for thisPulsera in todasPulseras %}
+                    ['{{ thisPulsera.name }}', {{ thisPulsera.x }}, {{ thisPulsera.y }}, '{{ thisPulsera.tipo }}'],
+                {% endfor %}
+            ])  ;
+
+            var options = {
+                title: 'Listado de Balizas y Manillas',
+                hAxis: { title: 'Distancia en metros eje X' },
+                vAxis: { title: 'Distancia en metros eje Y' },
+                series: {'Baliza': {color: "#98183a"},'Manilla': {color: "#f7aa3b"}},
+                bubble: { textStyle: { fontSize: 11 } },
+                //chartArea:{left:200,top:100,width:'80%',height:'60%'}
+            };
+
+            chart.draw(dataChart, options);
+        }
+    </script>
+{% endblock %}
+
+
+
+

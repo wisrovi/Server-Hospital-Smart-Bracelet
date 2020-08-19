@@ -1,0 +1,26 @@
+{% extends 'MENU_OPCIONES/LAYOUT.html' %}
+
+{% block content %}
+    <form action=".." method="post">
+        <div class="card card-primary">
+            <div class="card-body">
+                {% csrf_token %}
+                {% for field in form.visible_fields %}
+                    <div class="form-group">
+                        {% if field.errors %}
+                            {{ field.errors }}
+                        {% endif %}
+                        <label>{{ field.label }}:</label>
+                        {{ field }}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary btn-flat">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+

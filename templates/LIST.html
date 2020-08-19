@@ -1,0 +1,80 @@
+{% extends 'MENU_OPCIONES/LAYOUT.html' %}
+{% load static %}
+
+{% block head %}
+    <!--  https://datatables.net/  -->
+    {% include 'JS/JS_DATATABLE.html' %}
+{% endblock %}
+
+{% block content %}
+    {% if user.is_authenticated %}
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-search"></i>
+                    {{ title }}
+                </h3>
+            </div>
+            <div class="card-body">
+                {% if error %}
+                    <div class="alert alert-danger alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                        <h5><i class="icon fas fa-ban"></i> {{ error }}</h5>
+                    </div>
+                {% endif %}
+                <table class="table" id="data">
+                    <thead>
+                    {% block columns %}
+
+                    {% endblock %}
+                    </thead>
+                    <tbody>
+                    {% block rows %}
+
+                    {% endblock %}
+                    </tbody>
+                </table>
+            </div>
+            {% block botonCrear %}
+                <div class="card-footer">
+                    <a href="{{ create_url }}" class="btn btn-primary btn-flat btnTest" style="border-radius: 5px;">
+                        <i class="fas fa-plus"></i> Nuevo registro
+                    </a>
+                </div>
+            {% endblock %}
+        </div>
+    {% endif %}
+    <script type="application/javascript">
+        $(function () {
+            $('#data').DataTable({
+                responsive: true,
+                autoWidth: false
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block javascript %}
+    <script type="application/javascript">
+        $(function () {
+            $('.btnTest').on('click', function () {
+                $.ajax({
+                    url: window.location.pathname,
+                    type: 'POST',
+                    data: {id: 1},
+                    dataType: 'json'
+                }).done(function (data) {
+                    console.log(data);
+                    if (data.hasOwnProperty('error')) {
+                        MensajeError(data['error']);
+                        return false;
+                    }
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    MensajeError(textStatus + ': ' + errorThrown);
+                }).always(function (data) {
+
+                });
+            });
+        });
+    </script>
+{% endblock %}

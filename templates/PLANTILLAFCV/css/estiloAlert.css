@@ -1,0 +1,25 @@
+body {
+    border: unset;
+}
+
+form {
+    width: 450px;
+    margin: auto;
+    padding: 10px 20px;
+    box-sizing: border-box;
+    margin-top: 20px;
+    border-radius: 7px;
+}
+
+fieldset {
+    border-width: 10px;
+    text-align: center;
+    margin: color #555555;
+    padding: 30px;
+    border-radius: 10px;
+}
+
+.logo {
+    text-align: left;
+    border-color: royalblue;
+}

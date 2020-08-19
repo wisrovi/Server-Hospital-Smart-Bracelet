@@ -1,0 +1,40 @@
+{% extends 'email/BASE_EMAIL.html' %}
+
+{% block Titulo %}
+    <h1 style="text-align: center;">
+        <strong>Estimate&nbsp;{{ ADMIN }},</strong>
+    </h1>
+{% endblock %}
+
+{% block intro %}
+    <p style="text-align: center;">&nbsp;</p>
+    <h2 style="text-align: center;">
+        New baliza has been found on the network, this one has the Mac: {{BALIZA}}
+    </h2>
+    <p>&nbsp;</p>
+{% endblock %}
+
+{% block conten %}
+    <p style="text-align: center;">
+        Please register it on the administration platform.
+    </p>
+    <h2 style="text-align: center;">&nbsp;</h2>
+{% endblock %}
+
+{% block firma %}
+    <h2 style="text-align: center;">
+        <em>Best regards.</em>
+        <br/>
+        <em>Att,</em>
+    </h2>
+    <h3 style="text-align: center;">
+        <br/>
+        {{ PROJECT }}
+    </h3>
+    <h3 style="text-align: center; -webkit-filter: blur(1px);">
+        <br/>
+        <a href="https://wisrovirodriguez.wixsite.com/wisrovi">
+            {{ FIRMA }}
+        </a>
+    </h3>
+{% endblock %}

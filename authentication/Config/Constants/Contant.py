@@ -1,0 +1,1 @@
+rol_enviar_notificaiones_servidor = "Server"

@@ -1,0 +1,82 @@
+{% load static %}
+
+<aside class="main-sidebar sidebar-light-primary elevation-4">
+    <div class="sidebar">
+        <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+            <div class="image">
+                <img src="{% static 'images/user.png' %}" class="img-circle elevation-2" alt="User Image">
+            </div>
+            <div class="info">
+                <a href="#" class="d-block">{{ user }}</a>
+            </div>
+        </div>
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="true">
+            <li class="treeview active">
+                <a href="#">
+                    <i class="fa fa-users"></i>
+                    <span>Users</span>
+                    <i class="fa fa-angle-left pull-right"></i>
+                </a>
+                <ul class="treeview-menu">
+                    <li>
+                        <a href="#">
+                            Permissions
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            Other submenu
+                        </a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+        {#        <ul class="nav nav-pills nav-sidebar flex-column"#}
+        {#            data-widget="tree"#}
+        {#            role="menu">#}
+        {#            <li class="nav-header">Mantenimientos</li>#}
+        {##}
+        {#            <li class="nav-item menu-open">#}
+        {#                <a href="#" class="nav-link">#}
+        {#                    <i class="nav-icon fas fa-truck-loading"></i>#}
+        {#                    <span>Categorías</span>#}
+        {#                </a>#}
+        {#                <ul class="treeview-menu">#}
+        {#                    <li><a href="#"><i class="fa fa-circle-o"></i>Dashboard v1</a></li>#}
+        {#                    <li><a href="#"><i class="fa fa-circle-o"></i>Dashboard v2</a></li>#}
+        {#                </ul>#}
+        {#            </li>#}
+        {##}
+        {#            <li class="nav-item">#}
+        {#                <a href="#" class="nav-link">#}
+        {#                    <i class="nav-icon fas fa-boxes"></i>#}
+        {#                    <p>#}
+        {#                        Productos#}
+        {#                    </p>#}
+        {#                </a>#}
+        {#            </li>#}
+        {#            <li class="nav-item">#}
+        {#                <a href="#" class="nav-link">#}
+        {#                    <i class="nav-icon fas fa-users"></i>#}
+        {#                    <p>#}
+        {#                        Clientes#}
+        {#                    </p>#}
+        {#                </a>#}
+        {#            </li>#}
+        {#            <li class="nav-item">#}
+        {#                <a href="#" class="nav-link">#}
+        {#                    <i class="nav-icon fas fa-shopping-cart"></i>#}
+        {#                    <p>#}
+        {#                        Ventas#}
+        {#                    </p>#}
+        {#                </a>#}
+        {#            </li>#}
+        {#        </ul>#}
+    </div>
+</aside>
+
+<script type="text/javascript">
+    jQuery(function ($) {
+        //$("#treeview").shieldTreeView();
+    });
+</script>

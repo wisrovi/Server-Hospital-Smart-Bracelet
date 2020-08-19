@@ -1,0 +1,23 @@
+{% load static %}
+
+<!-- obligatiorio CSS select2 -->
+<link href="{% static 'Lib/select2-4.0.13/css/select2.min.css' %}" rel="stylesheet"/>
+
+<!-- tema para el menú desplegable -->
+<link href="{% static 'Lib/select2-4.0.13/css/select2-bootstrap4.min.css' %}" rel="stylesheet"/>
+
+<!-- obligatiorio JS select2 -->
+<script src="{% static 'Lib/select2-4.0.13/js/select2.min.js' %}"></script>
+
+<!-- idioma en la lista desplegable -->
+<script src="{% static 'Lib/select2-4.0.13/js/i18n/es.js' %}"></script>
+
+<!-- Para activar el select2 en todos los objetos que lo usan -->
+<script type="text/javascript">
+    $(function () {
+        $('.select2').select2({
+            theme: "bootstrap4",
+            language: "es"
+        });
+    });
+</script>

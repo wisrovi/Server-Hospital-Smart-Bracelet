@@ -1,0 +1,47 @@
+{% extends 'LIST.html' %}
+{% load static %}
+
+{% block columns %}
+    <tr>
+        <th scope="col" style="width: 10%;">Nro</th>
+        <th scope="col" style="width: 31%;">Baliza</th>
+        <th scope="col" style="width: 15%;">Piso</th>
+        <th scope="col" style="width: 12%;">Posición (X)</th>
+        <th scope="col" style="width: 12%;">Posición (Y)</th>
+        <th scope="col" style="width: 20%;">Opciones</th>
+    </tr>
+{% endblock %}
+
+{% block rows %}
+    {% for object in object_list %}
+        <tr>
+            <td>
+                {{ object.id }}
+            </td>
+            <td>
+                {{ object.baliza }}
+            </td>
+            <td>
+                {{ object.piso }}
+            </td>
+            <td>
+                {{ object.instalacionX }}
+            </td>
+            <td>
+                {{ object.instalacionY }}
+            </td>
+            <td>
+                <a href="{% url 'project:form_update_baliza' object.baliza.id %}" class="btn btn-warning btn-xs btn-flat">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <a href="{% url 'project:form_delete_baliza' object.baliza.id %}" class="btn btn-danger btn-xs btn-flat">
+                    <i class="fas fa-trash-alt"></i>
+                </a>
+            </td>
+        </tr>
+    {% endfor %}
+{% endblock %}
+
+{% block javascript %}
+
+{% endblock %}

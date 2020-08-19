@@ -1,0 +1,191 @@
+{% extends 'BASE/BASE_LOGIN.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="limiter">
+        <div class="container-login100" style="background-image: url({% static 'images/bg-01.jpg' %})">
+            <div class="wrap-login100 p-l-55 p-r-55 p-t-65 p-b-54">
+                <form class="login100-form validate-form" method="post" action=".">
+                    {% csrf_token %}
+                    <input id="code_verification" type="text" name="code_verification"
+                           value="{{ code_verification }}"/>
+
+                    <span class="login100-form-title p-b-49">
+                        Registro
+                    </span>
+
+                    <div class="wrap-input100 validate-input m-b-23" data-validate="Email is reauired">
+                        <span class="label-input100">Nombre de pila</span>
+                        <!-- <input class="input100" type="email" name="email" placeholder="Type your email"> -->
+                        {{ form.firstname }}
+                        <span class="focus-input100" data-symbol="&#xf206;"></span>
+                    </div>
+
+                    <div id="campo_lastname" class="wrap-input100 validate-input m-b-23"
+                         data-validate="Email is reauired">
+                        <span class="label-input100">Apellido</span>
+                        <!-- <input class="input100" type="email" name="email" placeholder="Type your email"> -->
+                        {{ form.lastname }}
+                        <span class="focus-input100" data-symbol="&#xf206;"></span>
+                    </div>
+
+                    <div id="campo_email" class="wrap-input100 validate-input m-b-23" data-validate="Email is reauired">
+                        <span class="label-input100">Email</span>
+                        <!-- <input class="input100" type="email" name="email" placeholder="Type your email"> -->
+                        {{ form.email }}
+                        <span class="focus-input100" data-symbol="&#xf206;"></span>
+                    </div>
+
+                    <input id="code_verification_user" type="hidden" name="code"
+                           value="{{ code_verification }}"/>
+                    <input id="code_verification_reenviar" type="hidden" name="reenviar"
+                           value="{{ code_verification_reenviar }}"/>
+                    <div class="text-right p-t-8 p-b-31"></div>
+
+                    <div class="container-login100-form-btn">
+                        <div class="wrap-login100-form-btn">
+                            <div class="login100-form-bgbtn"></div>
+                            <button id="button" type="submit" class="login100-form-btn">
+                                {{ Value_button }}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex-col-c p-t-20">
+                        <a href="{% url 'signin' %}" class="txt2">
+                            Login
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="dropDownSelect1"></div>
+{% endblock %}
+
+{% block javascript %}
+    <script type="text/javascript">
+        $('form').on('submit', function (e) {
+            e.preventDefault();
+            var parameters = $(this).serializeArray();
+            $.ajax({
+                url: window.location.pathname,
+                type: 'POST',
+                data: parameters,
+                dataType: 'json'
+            }).done(function (data) {
+                if (data.hasOwnProperty('error')) {
+                    MensajeError(data['error']);
+                    return false;
+                } else {
+                    if (data.hasOwnProperty('code_verification')) {
+                        var codigoOriginail = data['code_verification']
+                        $('#code_verification').val(codigoOriginail);
+                        parameters[1]['value'] = codigoOriginail
+                        DesplegarMensajeDigitarCodigo(codigoOriginail, parameters);
+                        return false;
+                    }
+
+                    if (data.hasOwnProperty('value_button')) {
+                        $('#button').val(data['value_button']);
+                        return false;
+                    }
+                }
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                alert(textStatus + ': ' + errorThrown);
+            }).always(function (data) {
+
+            });
+        });
+
+        function DesplegarMensajeDigitarCodigo(codigoOriginail, parameters) {
+            var texto = "Se ha enviado un correo a '";
+            texto = texto.concat(parameters[4]['value']);
+            texto = texto.concat("' con el código de verificación, por favor ingreselo a continuación: ");
+            Swal
+                .fire({
+                    title: texto,
+                    input: "text",
+                    icon: 'info',
+                    showCloseButton: true,
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: "Confirmar",
+
+                    cancelButtonColor: '#d33',
+                    cancelButtonText: "Reenviar correo",
+                    //timer: 5000,
+                    inputValidator: nombre => {
+                        // Si el valor es válido, debes regresar undefined. Si no, una cadena
+                        if (!nombre) {
+                            return "Por favor escribe el código de verificación";
+                        } else {
+                            return undefined;
+                        }
+                    }
+                }).then(resultado => {
+                if (resultado.value) {
+                    //proceso si oprimo el boton de validar
+                    let nombre = resultado.value;
+                    if (nombre === codigoOriginail) {
+                        $('#code').val(nombre);
+                        $('#code_verification_reenviar').val("");
+
+                        MensajeInfo("Código correcto");
+                        parameters[5]['value'] = nombre;
+                        $.ajax({
+                            url: window.location.pathname,
+                            type: 'POST',
+                            data: parameters,
+                            dataType: 'json'
+                        }).done(function (data) {
+                            if (data.hasOwnProperty('redirec')) {
+                                var url_redirec = '{% url 'signup' %}';
+                                url_redirec = url_redirec.concat("?D=");
+                                url_redirec = url_redirec.concat(data['redirec']);
+                                window.location.href = url_redirec;
+                            }
+                        }).fail(function (jqXHR, textStatus, errorThrown) {
+                            alert(textStatus + ': ' + errorThrown);
+                        }).always(function (data) {
+
+                        });
+                        return false;
+                    } else {
+                        MensajeError("Codigo invalido");
+                        return true;
+                    }
+                } else if (resultado.dismiss === Swal.DismissReason.cancel) {
+                    //proceso al oprimir el boton de cancelar: reenviar correo
+                    $('#code_verification_reenviar').val("ok");
+                    $('#button').val('REENVIAR CORREO');
+                    parameters[6]['value'] = 'ok';
+                    $.ajax({
+                        url: window.location.pathname,
+                        type: 'POST',
+                        data: parameters,
+                        dataType: 'json'
+                    }).done(function (data) {
+                        console.log(data);
+                        if (data.hasOwnProperty('Value_button')) {
+                            $('#button').val(data['Value_button']);
+                        }
+                        //MensajeInfo("Reenvio de código correcto.");
+                        if (data.hasOwnProperty('code_verification')) {
+                            var codigoOriginail = data['code_verification']
+                            $('#code_verification').val(codigoOriginail);
+                            parameters[1]['value'] = codigoOriginail
+                            DesplegarMensajeDigitarCodigo(codigoOriginail, parameters);
+                            return false;
+                        }
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                        alert(textStatus + ': ' + errorThrown);
+                    }).always(function (data) {
+
+                    });
+                    return false;
+                }
+            });
+        }
+    </script>
+{% endblock %}

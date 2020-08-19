@@ -1,0 +1,9 @@
+{% extends 'FORM.html' %}
+
+{% block botonesAdicionales %}
+    <a href="{% url 'project:form_update_bracelet_umbrals' idUmbralsBracelet %}" class="btn btn-block btn-flat"
+            style="border-radius: 5px;">
+        <i class="fas fa-edit"></i> Opciones Avanzadas
+    </a>
+{% endblock %}
+

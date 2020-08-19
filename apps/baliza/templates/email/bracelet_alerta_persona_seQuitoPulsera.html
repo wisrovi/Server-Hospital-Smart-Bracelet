@@ -1,0 +1,34 @@
+{% extends 'email/BASE_EMAIL.html' %}
+
+{% block Titulo %}
+    <h1 style="text-align: center;">&nbsp;<strong>Estimate&nbsp;</strong>{{ ADMIN }},</h1>
+    <p>&nbsp;</p>
+{% endblock %}
+
+{% block intro %}
+    <p>Baliza ({{BALIZA}}) discovered that the person wearing the bracelet ({{MAC}}) removed the bracelet (THE PATIENT MUST NOT BE REMOVED WHILE INSIDE THE HOSPITAL).</p>
+    <p>&nbsp;</p>
+{% endblock %}
+
+{% block conten %}
+    <p>Check the location of the person wearing the bracelet and go to their location to help them put the Bracelet back on.</p>
+    <p style="text-align: center;">&nbsp;</p>
+{% endblock %}
+
+{% block firma %}
+    <h2 style="text-align: center;">
+        <em>Best regards.</em>
+        <br/>
+        <em>Att,</em>
+    </h2>
+    <h3 style="text-align: center;">
+        <br/>
+        {{ PROJECT }}
+    </h3>
+    <h3 style="text-align: center; -webkit-filter: blur(1px);">
+        <br/>
+        <a href="https://wisrovirodriguez.wixsite.com/wisrovi">
+            {{ FIRMA }}
+        </a>
+    </h3>
+{% endblock %}

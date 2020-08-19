@@ -1,0 +1,54 @@
+{% extends 'LIST.html' %}
+{% load static %}
+
+{% block columns %}
+    <tr>
+        <th scope="col" style="width: 5%;">Nro</th>
+        <th scope="col" style="width: 12%;">Bracelet</th>
+        <th scope="col" style="width: 5%;">PPM</th>
+        <th scope="col" style="width: 5%;">CAIDA</th>
+        <th scope="col" style="width: 10%;">Proximidad</th>
+        <th scope="col" style="width: 10%;">Temperatura</th>
+        <th scope="col" style="width: 10%;">Bateria</th>
+        <th scope="col" style="width: 15%;">Baliza Scan</th>
+        <th scope="col" style="width: 18%;">Fecha Registro</th>
+    </tr>
+{% endblock %}
+
+{% block rows %}
+    {% for object in object_list %}
+        <tr>
+            <td>
+                {{ object.id }}
+            </td>
+            <td>
+                {{ object.bracelet }}
+            </td>
+            <td>
+                {{ object.ppm_sensor }}
+            </td>
+            <td>
+                {{ object.caida_sensor }}
+            </td>
+            <td>
+                {{ object.proximidad_sensor }}
+            </td>
+            <td>
+                {{ object.temperatura_sensor }}
+            </td>
+            <td>
+                {{ object.nivel_bateria }}
+            </td>
+            <td>
+                {{ object.baliza }}
+            </td>
+            <td>
+                {{ object.fechaRegistro }}
+            </td>
+        </tr>
+    {% endfor %}
+{% endblock %}
+
+{% block botonCrear %}
+
+{% endblock %}

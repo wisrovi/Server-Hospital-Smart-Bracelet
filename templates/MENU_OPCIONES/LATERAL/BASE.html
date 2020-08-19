@@ -1,0 +1,67 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>{{ title }}</title>
+
+    {% include 'JS/ICONOS_AND_FONT__FROM_AWESOME.html' %}
+    {% include 'JS/JS_ADMINLTE.html' %}
+    {%  include 'JS/JS_sweetalert2.html' %}
+    {% include 'JS/JS_PROPIOS.html' %}
+
+    <!-- Block head -->
+    {% block head %}
+
+    {% endblock %}
+</head>
+<body class="hold-transition sidebar-mini layout-fixed">
+    <div class="wrapper">
+        {% block Header %}
+            <!-- Header -->
+            {% include 'MENU_OPCIONES/LATERAL/HEADER.html' %}
+            <!-- Sidebar -->
+            {% include 'MENU_OPCIONES/LATERAL/SIDERAR.html' %}
+        {% endblock %}
+
+        <!-- Content -->
+        <div class="content-wrapper">
+            {% block cabecero %}
+                {% if user.is_authenticated %}
+                    <div class="content-header">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    {#                            <h1 class="m-0 text-dark"> Bienvenido {{ user }} </h1>#}
+                                </div>
+                                <div class="col-sm-6">
+                                    <ol class="breadcrumb float-sm-right">
+                                        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                                        <li class="breadcrumb-item"><a href="{{ list_url }}">{{ entity }}</a></li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endblock %}
+
+            <div class="content">
+                <div class="container-fluid">
+                    {% block content %}
+
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    <!-- Footer -->
+    {% include 'HEADER_FOOTER/FOOTER.html' %}
+    </div>
+    <!-- Block javascript -->
+    {% block javascript %}
+
+    {% endblock %}
+</body>
+</html>
