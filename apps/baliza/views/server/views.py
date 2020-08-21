@@ -31,6 +31,14 @@ class DatoGraficaBubble:
         self.y = y
         self.tipo = tipo
 
+def ExtractMac(string):
+    macPulsera_complete = string[0:2] \
+                          + ":" + string[2:4] \
+                          + ":" + string[4:6] \
+                          + ":" + string[6:8] \
+                          + ":" + string[8:10] \
+                          + ":" + string[10:12]
+    return macPulsera_complete
 
 @method_decorator(login_required(login_url='signin'), name='dispatch')
 class VerPiso(TemplateView):
@@ -158,14 +166,23 @@ class ServerReceivedCreateView(FormView):
     def post(self, request, *args, **kwargs):
         data = dict()
         try:
-            key = request.POST['key']
-            if key == 'ESP32':
-                forms = PackBraceletForm(request.POST)
+            import json
+            d = request.POST
+            data_received = ""
+            keys = d.keys()
+            for key in keys:
+                print(key)
+                data_received = json.loads(str(key))
+
+            print(data_received['key'], data_received['string_pack'])
+            if data_received['key'] == 'ESP32':
+                forms = PackBraceletForm(data_received)
                 if forms.is_valid():
                     string_pack = forms.cleaned_data['string_pack']
 
                     # Despues de obtener el dato se decodifica y se convierte en JSON
                     import base64
+                    string_pack = string_pack.replace("*","=")
                     string_pack = base64.b64decode(string_pack).decode("utf-8")
                     import json
                     string_pack = json.loads(string_pack)
@@ -192,7 +209,10 @@ class ServerReceivedCreateView(FormView):
 
                                 # leo en la DB el objeto de Bracelet y traigo todos los campos
                                 pulsera = Bracelet.objects.get(macDispositivo=ExtractMac(bracelet['MAC']))
-                                balizaNow = Baliza.objects.get(macDispositivoBaliza=baliza)
+
+                                baliz = ExtractMac(baliza[0])
+
+                                balizaNow = Baliza.objects.get(macDispositivoBaliza=baliz)
 
                                 # Creo un nuevo registro de historial, pero aún no lo guardo
                                 histNew = HistorialBraceletSensors()

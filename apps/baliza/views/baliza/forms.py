@@ -13,7 +13,7 @@ class CreateBalizaForm(forms.Form):
                    'placeholder': 'Escribe la MAC de la Baliza', 'autocomplete': 'off'}))
     description_baliza = forms.CharField(
         label='Descripción Baliza',
-        max_length=17,
+        max_length=50,
         widget=forms.TextInput(
             attrs={'class': 'form-control', 'type': 'text', 'name': 'description_baliza',
                    'placeholder': 'Escribe una descripción para la Baliza', 'autocomplete': 'off'}))

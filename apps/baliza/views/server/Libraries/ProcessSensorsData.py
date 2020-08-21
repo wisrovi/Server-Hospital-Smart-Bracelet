@@ -27,9 +27,13 @@ def getDestinatariosCorreos():
 
 @execute_in_thread(name="hilo ValidarExisteBaliza")
 def ValidarExisteBaliza(baliza, request):
+    baliza = ExtractMac(baliza[0])
+
     balizasExistentes = Baliza.objects.all()
     for baliz in balizasExistentes:
-        if baliz.macDispositivoBaliza == baliza:
+        valor_comparar_1 = baliz.macDispositivoBaliza
+        valor_comparar_2 = baliza
+        if valor_comparar_1 == valor_comparar_2:
             return True
 
     diccionarioDatos = dict()
@@ -254,7 +258,9 @@ def ProcesarUbicacion(baliza, macPulsera, rssi):
 
     distancia = CalcularDistancia(measuredPower, rssi)
 
-    balizaNow = Baliza.objects.get(macDispositivoBaliza=baliza)
+    macBaliza = ExtractMac(baliza[0])
+
+    balizaNow = Baliza.objects.get(macDispositivoBaliza=macBaliza)
     histoRssi = HistorialRSSI()
     histoRssi.baliza = balizaNow
     histoRssi.bracelet = pulsera
