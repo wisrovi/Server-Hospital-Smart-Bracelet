@@ -4248,3 +4248,59 @@ django.utils.datastructures.MultiValueDictKeyError: 'id'
 {"Type": "INFO", "Date": "2020-08-19 17:46:42,391", "Details": {"PathName": "D:\Hospital-smart-bracelet\ServerDjango\apps\Util_apps\Decoradores.py", "File": "Decoradores.py", "Function": "wrapper", "Line": "43", "Module": "Decoradores", "Name": "root", "Thread_number": "9604", "Thread_name": "hilo ValidarCaida", "Process_number": "2712", "Process_name": "MainProcess" }, "Message": "Se ha lanzado un nuevo hilo usando el decorador con nombre: 'Send Mail'."}
 {"Type": "INFO", "Date": "2020-08-19 17:46:42,396", "Details": {"PathName": "D:\Hospital-smart-bracelet\ServerDjango\apps\Util_apps\Decoradores.py", "File": "Decoradores.py", "Function": "wrapper", "Line": "43", "Module": "Decoradores", "Name": "root", "Thread_number": "7332", "Thread_name": "hilo ValidadProximidad", "Process_number": "2712", "Process_name": "MainProcess" }, "Message": "Se ha lanzado un nuevo hilo usando el decorador con nombre: 'Send Mail'."}
 {"Type": "INFO", "Date": "2020-08-21 16:41:45,044", "Details": {"PathName": "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\utils\autoreload.py", "File": "autoreload.py", "Function": "trigger_reload", "Line": "222", "Module": "autoreload", "Name": "django.utils.autoreload", "Thread_number": "5084", "Thread_name": "MainThread", "Process_number": "10068", "Process_name": "MainProcess" }, "Message": "D:\github\Server-Hospital-Smart-Bracelet\manage.py changed, reloading."}
+{"Type": "ERROR", "Date": "2020-08-21 16:57:49,593", "Details": {"PathName": "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\utils\log.py", "File": "log.py", "Function": "log_response", "Line": "228", "Module": "log", "Name": "django.request", "Thread_number": "9776", "Thread_name": "Thread-6", "Process_number": "10232", "Process_name": "MainProcess" }, "Message": "Internal Server Error: //auth/signin/"}
+Traceback (most recent call last):
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\db\backends\utils.py", line 86, in _execute
+    return self.cursor.execute(sql, params)
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\db\backends\sqlite3\base.py", line 396, in execute
+    return Database.Cursor.execute(self, query, params)
+sqlite3.OperationalError: no such table: auth_user
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\core\handlers\exception.py", line 34, in inner
+    response = get_response(request)
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\core\handlers\base.py", line 115, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\core\handlers\base.py", line 113, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\github\Server-Hospital-Smart-Bracelet\apps\authapp\views.py", line 21, in signin
+    user = authenticate(username=username, password=password)
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\contrib\auth\__init__.py", line 72, in authenticate
+    user = backend.authenticate(request, **credentials)
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\contrib\auth\backends.py", line 46, in authenticate
+    user = UserModel._default_manager.get_by_natural_key(username)
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\contrib\auth\base_user.py", line 44, in get_by_natural_key
+    return self.get(**{self.model.USERNAME_FIELD: username})
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\db\models\manager.py", line 82, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\db\models\query.py", line 411, in get
+    num = len(clone)
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\db\models\query.py", line 258, in __len__
+    self._fetch_all()
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\db\models\query.py", line 1261, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\db\models\query.py", line 57, in __iter__
+    results = compiler.execute_sql(chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size)
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\db\models\sql\compiler.py", line 1151, in execute_sql
+    cursor.execute(sql, params)
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\db\backends\utils.py", line 100, in execute
+    return super().execute(sql, params)
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\db\backends\utils.py", line 68, in execute
+    return self._execute_with_wrappers(sql, params, many=False, executor=self._execute)
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\db\backends\utils.py", line 77, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\db\backends\utils.py", line 86, in _execute
+    return self.cursor.execute(sql, params)
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\db\utils.py", line 90, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\db\backends\utils.py", line 86, in _execute
+    return self.cursor.execute(sql, params)
+  File "C:\Users\williamrodriguez\AppData\Local\Programs\Python\Python36\lib\site-packages\django\db\backends\sqlite3\base.py", line 396, in execute
+    return Database.Cursor.execute(self, query, params)
+django.db.utils.OperationalError: no such table: auth_user
+{"Type": "INFO", "Date": "2020-08-21 16:58:10,063", "Details": {"PathName": "D:\github\Server-Hospital-Smart-Bracelet\apps\Util_apps\Decoradores.py", "File": "Decoradores.py", "Function": "wrapper", "Line": "43", "Module": "Decoradores", "Name": "root", "Thread_number": "9776", "Thread_name": "Thread-6", "Process_number": "10232", "Process_name": "MainProcess" }, "Message": "Se ha lanzado un nuevo hilo usando el decorador con nombre: 'Send Mail'."}
+{"Type": "INFO", "Date": "2020-08-21 17:00:16,933", "Details": {"PathName": "D:\github\Server-Hospital-Smart-Bracelet\apps\Util_apps\Decoradores.py", "File": "Decoradores.py", "Function": "wrapper", "Line": "43", "Module": "Decoradores", "Name": "root", "Thread_number": "1072", "Thread_name": "Thread-6", "Process_number": "1300", "Process_name": "MainProcess" }, "Message": "Se ha lanzado un nuevo hilo usando el decorador con nombre: 'Send Mail'."}
+{"Type": "INFO", "Date": "2020-08-21 17:00:33,424", "Details": {"PathName": "D:\github\Server-Hospital-Smart-Bracelet\apps\Util_apps\Decoradores.py", "File": "Decoradores.py", "Function": "wrapper", "Line": "43", "Module": "Decoradores", "Name": "root", "Thread_number": "1072", "Thread_name": "Thread-6", "Process_number": "1300", "Process_name": "MainProcess" }, "Message": "Se ha lanzado un nuevo hilo usando el decorador con nombre: 'Send Mail'."}
+{"Type": "INFO", "Date": "2020-08-21 17:00:42,002", "Details": {"PathName": "D:\github\Server-Hospital-Smart-Bracelet\apps\Util_apps\Decoradores.py", "File": "Decoradores.py", "Function": "wrapper", "Line": "43", "Module": "Decoradores", "Name": "root", "Thread_number": "1072", "Thread_name": "Thread-6", "Process_number": "1300", "Process_name": "MainProcess" }, "Message": "Se ha lanzado un nuevo hilo usando el decorador con nombre: 'Send Mail'."}
