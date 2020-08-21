@@ -14,7 +14,7 @@ def main():
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
-    accion = ['manage.py', 'runserver', '0.0.0.0:5000'] #sys.argv
+    accion = sys.argv #['manage.py', 'runserver', '0.0.0.0:5000'] #sys.argv
     #print(accion)
     execute_from_command_line(accion)
 
