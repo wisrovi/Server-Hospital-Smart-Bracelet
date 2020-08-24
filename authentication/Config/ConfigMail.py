@@ -48,7 +48,7 @@ if usar == 'FCV':
 else:
     EMAIL_HOST = 'smtp.gmail.com'
     EMAIL_PORT = 587
-    EMAIL_HOST_USER = 'wisrovi.rodriguez@gmail.com'
-    EMAIL_HOST_PASSWORD = 'tnyiytxkoaxcqkvd'
+    EMAIL_HOST_USER = 'hospitalsmartbracelet@gmail.com'
+    EMAIL_HOST_PASSWORD = 'Agosto.2020'
     EMAIL_USE_TLS = True
     EMAIL_USE_SSL = False
