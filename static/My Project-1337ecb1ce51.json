@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "enduring-stage-287416",
+  "private_key_id": "1337ecb1ce514bcb11a75c058891ea8d50bf0244",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDnsXeu6LSeQ0Ln\n2F183Y0XZdbAvkSGhwJvwa5xlO9yGt9viYTyIoowzhlU2Pe/P53I3xh9a0znaAlT\nUAzc6GQkW06Tcu29lirv0ERRYuNtmmg+nZt+9RnZfuvCXLbjpFA71P6O2wX0hN/r\nYJTc9OMjnMy4xS8WdL32/CaL5k9onuLWCYrNPe8ACEI9jumgphbI2v8LePfQqlQ2\nHMEz/vfy1DLDZnMiFpcROaYk2vGACOhM9qdbxnRyqV0IN8iXHW8Jmi85QQbTTle0\nPWYv/6CqSE+NxYxi5Of4mvpvl0NgR2zExogo/VA9GDDNCMpUiT1fd+G8SB60SyQt\nYqLdEKMXAgMBAAECggEAHpV7kfgf14BTdZ1HAfOQ61TDG2BCVWu+85eielXJoctQ\nUT3a8ceDbFvYVi3pzjIMlvZ0GiIu3aELEhdQC10V0wLGhYo3Pb5z3oIkcoXWNaKb\nPiC55PFfvykU3+wzLCuFd9Bu5dadm6Bqmnx+Sgh9bzcEgyNsSs+QP+kbAX6eXtXS\nFhhFSqwYymmEzfEc9qXajfgxZJk9ZKtVhIz3h0u1cln+7FeYFWKy+wwTh+Q0nfaU\nxsKPXWQk9Hje95qwMUt5yQ6CtGduxFvaZdjlmOgmrc+yZ9UMZyWKmngbpBeaHprH\nuox7jEm+vvnTAaZMGKxSngvwL2CQCYZFVrgS3t6v6QKBgQD4kNm9jCTnxasHXqOH\nWVYsj8YVg0RdjNZkk9vvYOX8W9IQB0F9LHH9q84m2yM//+uypMzEuMOYlhB5pAHL\nOU/5+c9XPLCw1BeJslOTcnO5LvYWhWNGn2ZOVlK3thA2qb5JWgcmp68Su7v60LCl\nsV2xCAhQYsoFng4KR+Ye4vhjXQKBgQDun25+5X/JkqhMYCZkn5cjA+IA20+AfjiL\nDd1jaMRExNzfDFLBq9FFsCNOKpClgr3uY62JRT+wjOlGzm023TSr8GL0EmYLQPqI\neanNepZcyQxR9o5biZ1DyY8wdecZUCaHMPpTP6HlTMm7MdZrZIL0SYLa2L7VOt1J\nVSd6+47NAwKBgDGa/slUKZ1TloE/AtWlH4x/GOH8M22UCMlDtNW9+cf2LyLhv9ES\nSKF+YwLgItXH5irdtrvfv7E46YrND0qWYn6ZuyZGx2BSw2vIeeNoKO4hEB2IezqB\n3zHtCk79d5jhIUeUPu8Y8diEPMyeT1KR5gfJeZdJT9X1KAonNSae10FFAoGAcbLf\n2HEL+YT60iGCSbHNNu7zsgrNj+EUmhVKJsLVuhq/Tzw09nki5vytZeJcN7DbRQqT\ntnObjEkoIgfb/CdcoIyS6c8WdkhI19x4ryK5II7fYvKDFFS27YTNyH51VhddtE7/\nB8mrH3H+MUbm7xbeWv3n7tUV4M4CgJ2liTDx8vcCgYEAt1iGtHfRrxHxXa1ue8T+\nK9KOrnCcP/mhM1uA+1uZsWkn3G9+xifhtSsOBq6L48l06fZR9okxrwVwUoWYEDjf\nVCDrM6dfe3W67reyqAAABtYICKR67SISVEgxjqAEGSJsTAwJlyTVPbd8XJN11ZCI\nhqwLl8z0cQWUkTmddGbwEfM=\n-----END PRIVATE KEY-----\n",
+  "client_email": "hospitalsmartbracelet@enduring-stage-287416.iam.gserviceaccount.com",
+  "client_id": "104565225392404026321",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/hospitalsmartbracelet%40enduring-stage-287416.iam.gserviceaccount.com"
+}
