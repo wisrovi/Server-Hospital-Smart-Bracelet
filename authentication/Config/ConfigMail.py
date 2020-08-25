@@ -35,7 +35,7 @@ EMAIL_USE_TLS = bool()
 EMAIL_USE_SSL = bool()
 
 
-usar = 'GMAIL'
+usar = 'FCV'
 
 
 if usar == 'FCV':
