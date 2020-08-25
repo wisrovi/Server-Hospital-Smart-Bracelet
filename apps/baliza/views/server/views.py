@@ -171,10 +171,10 @@ class ServerReceivedCreateView(FormView):
             data_received = ""
             keys = d.keys()
             for key in keys:
-                print(key)
+                #print(key)
                 data_received = json.loads(str(key))
 
-            print(data_received['key'], data_received['string_pack'])
+            #print(data_received['key'], data_received['string_pack'])
             if data_received['key'] == 'ESP32':
                 forms = PackBraceletForm(data_received)
                 if forms.is_valid():
