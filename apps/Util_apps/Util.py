@@ -1,12 +1,14 @@
 from apps.Util_apps.Decoradores import execute_in_thread
 import requests
 from django.contrib import messages  # import messages
-from django.core.mail import send_mail
+# from django.core.mail import send_mail
 from django.utils.html import strip_tags
+from authentication.Config.ConfigMail import EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD, EMAIL_HOST_USER
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
+
 
 @execute_in_thread(name="hilo request")
 def generate_request_get(url, success_callback, error_callback):
@@ -18,7 +20,6 @@ def generate_request_get(url, success_callback, error_callback):
         error_callback(url)
 
 
-from authentication.Config.ConfigMail import EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD, EMAIL_HOST_USER
 def send_mail(asunto, html, firma, correo):
     try:
         msg = MIMEMultipart()
@@ -42,7 +43,6 @@ def send_mail(asunto, html, firma, correo):
         server.quit()
     except:
         print("failed send email to %s:" % (correo))
-
 
 
 @execute_in_thread(name="Send Mail")

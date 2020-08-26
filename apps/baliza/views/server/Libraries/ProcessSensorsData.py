@@ -10,6 +10,9 @@ from apps.Util_apps.Decoradores import execute_in_thread
 from authentication.Config.Constants.Contant import rol_enviar_notificaiones_servidor
 
 
+listadoMacsReportadas = list()
+
+
 def getDestinatariosCorreos():
     rolBuscar = rol_enviar_notificaiones_servidor
     listaCorreosDestinatarios = list()
@@ -48,9 +51,11 @@ def ValidarExisteBaliza(baliza, request):
 
     listaDestinatarios = getDestinatariosCorreos()
     if len(listaDestinatarios) > 0:
-        Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
-                           listaDestinatarios, request)
-        print("Nueva Baliza encontrada")
+        if not diccionarioDatos['BALIZA'] in listadoMacsReportadas:
+            Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
+                               listaDestinatarios, request)
+            print("Nueva Baliza encontrada")
+            listadoMacsReportadas.append(diccionarioDatos['BALIZA'])
     return False
 
 
@@ -76,9 +81,11 @@ def ValidarExisteBracelet(bracelet, baliza, request):
 
     listaDestinatarios = getDestinatariosCorreos()
     if len(listaDestinatarios) > 0:
-        Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
-                           listaDestinatarios, request)
-        print("Nuevo Bracelet encontrado")
+        if not diccionarioDatos['MAC'] in listadoMacsReportadas:
+            Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
+                               listaDestinatarios, request)
+            print("Nuevo Bracelet encontrado")
+            listadoMacsReportadas.append(diccionarioDatos['MAC'])
     return False
 
 
