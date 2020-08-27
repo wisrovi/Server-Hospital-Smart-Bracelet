@@ -63,14 +63,12 @@
 
         var select_sede = $('select[name="sede"]');
         var select_ubicacion = $('select[name="ubicacion"]');
+
+
+
         $(function () {
-            select_ubicacion.on('change', function () {
-                var id = $(this).val();
-                var options = '<option value"">------------------</option>';
-                if (id === "") {
-                    select_ubicacion.html(options);
-                    return false;
-                }
+            var id;
+            function doRefresh(){
                 $.ajax({
                     url: window.location.pathname,
                     type: 'POST',
@@ -123,6 +121,21 @@
                 }).always(function (data) {
 
                 });
+                setTimeout(function() {
+                    doRefresh();
+                    {#MensajeInfo("Hola mundo")#}
+                }, 1000);
+            }
+
+            select_ubicacion.on('change', function () {
+                id = $(this).val();
+                var options = '<option value"">------------------</option>';
+                if (id === "") {
+                    select_ubicacion.html(options);
+                    return false;
+                }
+
+                doRefresh();
             });
 
             select_sede.on('change', function () {
@@ -172,6 +185,7 @@
             chart.draw(dataChart, optionsChart);
         }
     </script>
+
 {% endblock %}
 
 
