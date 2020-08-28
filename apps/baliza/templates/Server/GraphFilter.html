@@ -34,30 +34,52 @@
     {% include 'JS/JS_CHART.html' %}
     <script type="text/javascript">
         google.charts.load('current', {'packages': ['corechart']});
+        google.charts.setOnLoadCallback(drawSeriesChart);
 
-        var optionsChart = {
+
+        function drawSeriesChart() {
+            var dataChart = google.visualization.arrayToDataTable(dataCharArray);
+
+            var options = {
             title: 'Listado de Balizas y Manillas',
             hAxis: {
-                title: 'Distancia en metros eje X'
+                title: 'Distancia en metros eje X',
+                titleTextStyle: { color: 'black', fontSize: 10, bold: true, italic: true }, //titulo del eje X y estilo
+                textStyle: { color: 'black', fontSize: 15, bold: true, italic: true },//tamaño y estilo de los numeros del eje X
+                maxValue: 16, //Fija los valores del eje x
+                gridlines: { count: 0 } //Eliminar las lineas del eje x
             },
             vAxis: {
-                title: 'Distancia en metros eje Y'
+                title: 'Distancia en metros eje Y',
+                titleTextStyle: { color: 'black', fontSize: 10, bold: true, italic: true },//titulo del eje Y
+                textStyle: { color: 'black', fontSize: 15, bold: true, italic: true }, //tamaño y estilo de los numeros del eje Y
+                maxValue: 12, //Fija los valores del eje x
+                gridlines: { count: 0 }//Eliminar las lineas del eje x
             },
-            series: {
-                'Baliza': {
-                    color: "#98183a"
-                },
-                'Manilla': {
-                    color: "#f7aa3b"
-                }
-            },
-            bubble: {
-                textStyle: {
-                    fontSize: 11
-                }
-            },
-            //chartArea:{left:200,top:100,width:'80%',height:'60%'}
+            legend: { position: 'bottom', textStyle: { color: 'black', fontSize: 25, fontName: "Calibri", bold: true, italic: false } },//Modificación del texto y posición de la leyenda
+            series: { 'Baliza': { color: "#98183a" }, 'Manilla': { color: "#f7aa3b" } },//Colores de las series de la graficas
+            //backgroundColor:{fill: {color:"#a4a7ad"},stroke: {color: "#98183a"}, strokeWidth: 10},//color de fondo y marco
+            backgroundColor:{fill: {color:'none'}, stroke: {color: "#98183a"}, strokeWidth: 10},//color de fondo y marco
+            //backgroundColor: 'none', //Quitar el dondo y marco de la grafica
+            bubble: { textStyle: { color: "blue", fontName: "Calibri", fontSize: 0.1 }, opacity: 0.7, stroke: "black" },//Estilo de la burbuja y texto de la misma
+            chartArea: { left: 100, top: 100, width: '75%', height: '60%' },//Configuración del área del grafico
+            sizeAxis: { minValue: 0, maxSize: 15 },//Tamaño de la burbuja
+            tooltip: { textStyle: { color: '#00a2b4', fontName: 'Calibri', fontSize: 25, bold: true, italic: true, showColorCode: true }, trigger: 'focus', }//información de la elección de las burbujas
+            //https://developers.google.com/chart/interactive/docs/gallery/bubblechart#javascript
         };
+
+            function selectHandler() {
+                var selectedItem = chart.getSelection()[0];
+                if (selectedItem) {
+                    var macDispositivo = dataChart.getValue(selectedItem.row, 0);
+                    alert('El Usuario selecciono la ' + macDispositivo);
+                }
+            }
+
+            var chart = new google.visualization.BubbleChart(document.getElementById('series_chart_div'));
+            google.visualization.events.addListener(chart, 'select', selectHandler);
+            chart.draw(dataChart, options);
+        }
 
         var dataCharArray = [['Nombre', 'X', 'Y', 'Tipo'],];
 
@@ -83,18 +105,18 @@
                         dataCharArray = [
                             ['Nombre', 'X', 'Y', 'Tipo'],
                         ];
-                        if (data.hasOwnProperty('todasBalizas')) {
+                        if (data.hasOwnProperty('todasBalizas') && data['todasBalizas'].length > 0) {
                             data['todasBalizas'].forEach(function (elemento) {
                                 dataCharArray[dataCharArray.length] = elemento;
                             });
                         }
-                        if (data.hasOwnProperty('todasPulseras')) {
+                        if (data.hasOwnProperty('todasPulseras') && data['todasPulseras'].length > 0) {
                             data['todasPulseras'].forEach(function (elemento) {
                                 dataCharArray[dataCharArray.length] = elemento;
                             });
                         }
 
-                        if(data['todasBalizas'].length > 0 && data['todasPulseras'].length > 0){
+                        if(data['todasBalizas'].length > 0){
                             google.charts.load('current', {
                                     'packages': ['corechart']
                                 }
@@ -107,9 +129,9 @@
                                 if(data['todasBalizas'].length === 0){
                                     MensajeAlerta("No hay Balizas para mostrar");
                                 }
-                                if(data['todasPulseras'].length === 0){
-                                    MensajeAlerta("No hay Historial de datos de Pulseras para mostrar.");
-                                }
+                                {#if(data['todasPulseras'].length === 0){#}
+                                {#    MensajeAlerta("No hay Historial de datos de Pulseras para mostrar.");#}
+                                {# }#}
                             }
                         }
                         return false;
@@ -170,20 +192,6 @@
             });
         });
 
-        function drawSeriesChart() {
-            {#var data = google.visualization.arrayToDataTable([#}
-            {#    ['Nombre', 'X', 'Y', 'Tipo'],#}
-            {#    {% for thisBaliza in todasBalizas %}#}
-            {#        ['{{ thisBaliza.name }}', {{ thisBaliza.x }}, {{ thisBaliza.y }}, '{{ thisBaliza.tipo }}'],#}
-            {#    {% endfor %}#}
-            {#    {% for thisPulsera in todasPulseras %}#}
-            {#        ['{{ thisPulsera.name }}', Math.round({{ thisPulsera.x }}), Math.round({{ thisPulsera.y }}), '{{ thisPulsera.tipo }}'],#}
-            {#    {% endfor %}#}
-            {#])  ;#}
-            var chart = new google.visualization.BubbleChart(document.getElementById('series_chart_div'));
-            var dataChart = google.visualization.arrayToDataTable(dataCharArray);
-            chart.draw(dataChart, optionsChart);
-        }
     </script>
 
 {% endblock %}
