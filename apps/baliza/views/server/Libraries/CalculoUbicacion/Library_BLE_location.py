@@ -78,8 +78,8 @@ def CalcularPuntos(punto_clave1, punto_clave2):
                    constanteX_ecuacion2 * constanteY_ecuacion1 - constanteX_ecuacion1 * constanteY_ecuacion2)
 
     ## redondear para quitar decimales
-    rtaX = round(rtaX, 1)
-    rtaY = round(rtaY, 1)
+    rtaX = abs(round(rtaX, 1))
+    rtaY = abs(round(rtaY, 1))
 
     return rtaX, rtaY
 

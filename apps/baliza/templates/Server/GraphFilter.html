@@ -3,6 +3,7 @@
 
 {% block head %}
     {% include 'JS/JS_SELECT2.html' %}
+{#    <link rel="stylesheet" type="text/css" href={% static 'css/imagenpiso.css' %}/>#}
 {% endblock %}
 
 {% block content %}
@@ -23,7 +24,11 @@
                     <label>Piso</label>
                     {{ form.ubicacion }}
                 </div>
-                <div id="series_chart_div" style="width: 1080px; height: 600px;"></div>
+                <div class="form-group">
+                    <div id="brand_div" style="top:100px; left:100px;">
+                        <div id="series_chart_div" style="width: 1080px; height: 600px;"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </form>
@@ -32,6 +37,22 @@
 
 {% block javascript %}
     {% include 'JS/JS_CHART.html' %}
+    <script type="text/javascript">
+        function refreshCSS(){
+            let links = document.getElementsByTagName('link');
+            for (let i = 0; i < links.length; i++) {
+                if (links[i].getAttribute('rel') === 'stylesheet') {
+                    let href = links[i].getAttribute('href').split('?')[0];
+
+                    let newHref = href + '?version='
+                                + new Date().getMilliseconds();
+
+                    links[i].setAttribute('href', newHref);
+                }
+            }
+        }
+    </script>
+
     <script type="text/javascript">
         google.charts.load('current', {'packages': ['corechart']});
         google.charts.setOnLoadCallback(drawSeriesChart);
