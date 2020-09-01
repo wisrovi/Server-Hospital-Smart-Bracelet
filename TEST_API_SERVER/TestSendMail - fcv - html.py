@@ -187,22 +187,24 @@ def PrepararDatosCorreo_bienvenido():
     #imagenes_en_html.append( "img/LOGOFCV.png" )
     imagenes_en_html.append( "img/iconoCaution.jpg" )
 
-PrepararDatosCorreo_bienvenido()
+PrepararDatosCorreo_nuevoBracelet()
+
+correo_destinatario = 'williamrodriguez@fcv.org' #"cesarfigueroa@fcv.org"
+
+##############################################################
+##############################################################
+##############################################################
+##############################################################
+##############################################################
+##############################################################
+##############################################################
+##############################################################
+##############################################################
+##############################################################
+##############################################################
+##############################################################
 
 
-
-##############################################################
-##############################################################
-##############################################################
-##############################################################
-##############################################################
-##############################################################
-##############################################################
-##############################################################
-##############################################################
-##############################################################
-##############################################################
-##############################################################
 html_message = render_to_string(PARAMETROS['File'], diccionarioDatos)
 
 for path_url in imagenes_en_html:
@@ -220,9 +222,9 @@ token = ""  #token aplication
 msgRoot  = MIMEMultipart('related')
 
 # setup the parameters of the message
-msgRoot ['Subject'] = "Asunto"
-msgRoot ['From'] = user
-msgRoot ['To'] = "wisrovi.rodriguez@gmail.com"
+msgRoot['Subject'] = "Asunto"
+msgRoot['From'] = user
+msgRoot['To'] = correo_destinatario
 
 # add in the message body
 message = "Thank you"
@@ -241,7 +243,7 @@ server = smtplib.SMTP('{}: {}'.format(host, port))
 server.starttls()
 
 # Login Credentials for sending the mail
-server.login(msgRoot ['From'], password)
+server.login(msgRoot['From'], password)
 
 # send the message via the server.
 server.sendmail(msgRoot ['From'], msgRoot ['To'], msgRoot.as_string())

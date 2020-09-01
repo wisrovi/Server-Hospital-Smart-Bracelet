@@ -8,9 +8,44 @@ from apps.baliza.views.server.Libraries.CalculoUbicacion.Library_BLE_location im
 from apps.Util_apps.Decoradores import execute_in_thread
 
 from authentication.Config.Constants.Contant import rol_enviar_notificaiones_servidor
+from apps.Util_apps.Util import config_files
 
+import os
 
 listadoMacsReportadas = list()
+
+PARAMETROS = dict()
+
+
+# def render_to_string(nameFile, dictionary):
+#     data = str()
+#     ruta_archivo_html = ""
+#     for i in os.path.abspath(__file__).split("\\")[:-1]:
+#         ruta_archivo_html = os.path.join(ruta_archivo_html, i)
+#     ruta_archivo_html = os.path.join(ruta_archivo_html, nameFile)
+#
+#     print(os.path.abspath(__file__), nameFile, ruta_archivo_html)
+#
+#     with open(ruta_archivo_html, "r") as myfile:
+#         data = myfile.read()
+#         for key in dictionary:
+#             keys = list()
+#             keys.append("{{ " + key + " }}")
+#             keys.append("{{" + key + " }}")
+#             keys.append("{{ " + key + "}}")
+#             keys.append("{{" + key + "}}")
+#             for llave in keys:
+#                 if data.find(llave) >= 0:
+#                     data = data.replace(llave, dictionary[key])
+#                     break
+#     return data
+
+
+def ModifyHtml(url_path, html):
+    cid = url_path.split("/")
+    cid_search = cid[-1].split(".")[0]
+    html = html.replace(url_path, "cid:" + cid_search)
+    return html
 
 
 def getDestinatariosCorreos():
@@ -28,6 +63,12 @@ def getDestinatariosCorreos():
     return listaCorreosDestinatarios
 
 
+def PutImagesHtml(imagenes_en_html, html_message):
+    for path_url in imagenes_en_html:
+        html_message = ModifyHtml(path_url, html_message)
+    return html_message
+
+
 @execute_in_thread(name="hilo ValidarExisteBaliza")
 def ValidarExisteBaliza(baliza, request):
     baliza = ExtractMac(baliza[0])
@@ -39,23 +80,26 @@ def ValidarExisteBaliza(baliza, request):
         if valor_comparar_1 == valor_comparar_2:
             return True
 
+    PARAMETROS = config_files['nueva_baliza']
     diccionarioDatos = dict()
-    diccionarioDatos['ADMIN'] = str('Admin Server')
-    diccionarioDatos['BALIZA'] = str(baliza)
-    diccionarioDatos['PROJECT'] = str('Hospital Smart Bracelet')
-    diccionarioDatos['FIRMA'] = str('WISROVI')
-    html_message = render_to_string('email/nuevo_baliza_encontrada.html',
+    diccionarioDatos[PARAMETROS['Var'][0]] = str(baliza)
+    imagenes_en_html = list()
+    imagenes_en_html.append("LOGOFCV.png") #os.path.join("img", "LOGOFCV.png"))
+    imagenes_en_html.append("baliza.jpg") #os.path.join("img", "baliza.jpg"))
+
+    html_message = render_to_string(PARAMETROS['File'],
                                     diccionarioDatos)
+    html_message = PutImagesHtml(imagenes_en_html, html_message)
+
     asunto = "Nueva Baliza por registrar (" + baliza + ")"
-    firmaResumenRemitente = "Hospital Smart Bracelet"
 
     listaDestinatarios = getDestinatariosCorreos()
     if len(listaDestinatarios) > 0:
-        if not diccionarioDatos['BALIZA'] in listadoMacsReportadas:
-            Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
+        if not str(baliza) in listadoMacsReportadas:
+            Utilities.sendMail(asunto, html_message, imagenes_en_html,
                                listaDestinatarios, request)
             print("Nueva Baliza encontrada")
-            listadoMacsReportadas.append(diccionarioDatos['BALIZA'])
+            listadoMacsReportadas.append(str(baliza))
     return False
 
 
@@ -76,6 +120,7 @@ def ValidarExisteBracelet(bracelet, baliza, request):
     diccionarioDatos['FIRMA'] = str('WISROVI')
     html_message = render_to_string('email/bracelet_report_bad_sensors.html',
                                     diccionarioDatos)
+
     asunto = "Nuevo Bracelet por registrar (" + bracelet + ")"
     firmaResumenRemitente = "Hospital Smart Bracelet"
 
