@@ -48,12 +48,11 @@ def ChargeImage(url_path):
     url_path_folder =  os.path.join("emails",  url_path )
     MIMEImage_search = "<" + url_path.split(".")[0] + ">"
 
-    #if os.path.isfile(url_path):
     with open(finders.find(url_path_folder), 'rb') as fp:
         imagen_cargar = fp.read()
     msgImage = MIMEImage(imagen_cargar)
     msgImage.add_header('Content-ID', MIMEImage_search)
-    #print(url_path_folder, MIMEImage_search)
+    # print(url_path_folder, MIMEImage_search)
     return msgImage
 
 
@@ -68,22 +67,31 @@ def send_mail(asunto, html, firma, correo):
         part1 = MIMEText(html, 'html')
         msg.attach(part1)
 
+        print("***************************************************** Hola mundo *****************************************************")
+
         if isinstance(firma, list):
+            print("imagen", firma)
             for path_url in firma:
                 mime_image = ChargeImage(path_url)
                 msg.attach(mime_image)
         else:
+            print("plano")
             part2 = MIMEText(firma, 'plain')
             msg.attach(part2)
 
+        print("***************************************************** chao mundo *****************************************************")
 
         server = smtplib.SMTP('{}: {}'.format(EMAIL_HOST, EMAIL_PORT))
+        print("***************************************************** conect mundo *****************************************************")
+
         server.starttls()
 
         server.login(msg['From'], EMAIL_HOST_PASSWORD)
+        print("***************************************************** login mundo *****************************************************")
 
         server.sendmail(msg['From'], msg['To'], msg.as_string())
         server.quit()
+        print("Correo enviado2", msg['From'])
     except:
         print("failed send email to %s:" % (correo))
 

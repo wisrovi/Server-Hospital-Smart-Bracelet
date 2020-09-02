@@ -1,28 +1,27 @@
 from django.template.loader import render_to_string
+
 import apps.Util_apps.Util as Utilities
+from apps.Util_apps.Decoradores import execute_in_thread
+from apps.Util_apps.Util import config_files
 from apps.baliza.models import Baliza, RolUsuario, UsuarioRol, Bracelet, BraceletUmbrals, HistorialRSSI, \
     InstalacionBaliza
-from apps.baliza.views.server.Libraries.LibraryRSSItoMts import CalcularDistancia
 from apps.baliza.views.server.Libraries.CalculoUbicacion.Library_BLE_location import CalcularPosicion, BalizaInstalada, \
     Ubicacion
-from apps.Util_apps.Decoradores import execute_in_thread
-
+from apps.baliza.views.server.Libraries.LibraryRSSItoMts import CalcularDistancia
 from authentication.Config.Constants.Contant import rol_enviar_notificaiones_servidor
-from apps.Util_apps.Util import config_files
+import datetime
 
-import os
+
+
 
 listadoMacsReportadas = list()
 
-AlertasSensores = dict()
-SensoresDisponiblesEnPulsera = list()
-SensoresDisponiblesEnPulsera.append("TEM")
-SensoresDisponiblesEnPulsera.append("VOL")
-SensoresDisponiblesEnPulsera.append("PRO")
-SensoresDisponiblesEnPulsera.append("CAI")
-SensoresDisponiblesEnPulsera.append("PPM")
-SensoresDisponiblesEnPulsera.append("ACE")
-//TODO: Falta crear un metodo para que solo se envie un correo cada 5 minutos, siempre que sea la misma alerta, asi evitar enviar un correo cada segundo
+NAME_SENSOR_TEMP = 'TEMP'
+NAME_SENSOR_PRO = 'PRO'
+NAME_SENSOR_PPM = 'PPM'
+NAME_SENSOR_CAI = 'CAI'
+NAME_SENSOR_BAT = 'BAT'
+AlertasSensoresDic = dict()
 
 
 
@@ -48,6 +47,36 @@ SensoresDisponiblesEnPulsera.append("ACE")
 #                     data = data.replace(llave, dictionary[key])
 #                     break
 #     return data
+
+def getFechaHora():
+    fecha_hora = datetime.datetime.now()
+    # fecha_hora = (fecha_hora.year, fecha_hora.month, fecha_hora.day, fecha_hora.hour, fecha_hora.minute, fecha_hora.second)
+    return fecha_hora
+
+
+def se_debe_reportar(nameSensor, macBracelet):
+    respuesta = False
+    existe_mac = False
+    existe_sensor = False
+    for mac_in_history in AlertasSensoresDic:
+        if mac_in_history == macBracelet:
+            existe_mac = True
+            datos_sensores = AlertasSensoresDic[mac_in_history]
+            for sensor in datos_sensores:
+                if nameSensor == sensor:
+                    existe_sensor = True
+                    horaUltimoRegistro = AlertasSensoresDic[mac_in_history][nameSensor]
+                    diferencia = (getFechaHora() - horaUltimoRegistro).seconds
+                    if diferencia >= 300:
+                        respuesta = True
+            if not existe_sensor:
+                AlertasSensoresDic[mac_in_history][nameSensor] = getFechaHora()
+    if not existe_mac:
+        newSensor = dict()
+        newSensor[nameSensor] = getFechaHora()
+        AlertasSensoresDic[macBracelet] = newSensor
+        respuesta = True
+    return respuesta
 
 
 def ModifyHtml(url_path, html):
@@ -89,7 +118,7 @@ def ExtractMac(string):
 
 def getUmbrales(macPulsera):
     pulsera = Bracelet.objects.get(macDispositivo=macPulsera)
-    print("pulsera: ", pulsera)
+    # print("pulsera: ", pulsera)
     umbrales = BraceletUmbrals.objects.get(bracelet=pulsera)
     return umbrales
 
@@ -184,9 +213,10 @@ def ValidarCaida(baliza, macPulsera, caida, request):
 
         listaCorreosDestinatarios = getDestinatariosCorreos()
         if len(listaCorreosDestinatarios) > 0:
-            Utilities.sendMail(asunto, html_message, imagenes_en_html,
-                               listaCorreosDestinatarios, request)
-            print("Bracelet alerta caida")
+            if se_debe_reportar(NAME_SENSOR_CAI, str(macPulsera)):
+                Utilities.sendMail(asunto, html_message, imagenes_en_html,
+                                   listaCorreosDestinatarios, request)
+                print("Bracelet alerta caida")
 
 
 @execute_in_thread(name="hilo ValidadProximidad")
@@ -206,9 +236,10 @@ def ValidadProximidad(baliza, macPulsera, proximidad, request):
 
         listaCorreosDestinatarios = getDestinatariosCorreos()
         if len(listaCorreosDestinatarios) > 0:
-            Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
-                               listaCorreosDestinatarios, request)
-            print("Bracelet alerta proximidad")
+            if se_debe_reportar(NAME_SENSOR_PRO, str(macPulsera)):
+                Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
+                                   listaCorreosDestinatarios, request)
+                print("Bracelet alerta proximidad")
 
 
 @execute_in_thread(name="hilo ValidarTemperatura")
@@ -245,9 +276,10 @@ def ValidarTemperatura(macPulsera, temperaturaActual, request):
 
     listaCorreosDestinatarios = getDestinatariosCorreos()
     if len(listaCorreosDestinatarios) > 0 and hayAlarma:
-        Utilities.sendMail(asunto, html_message, imagenes_en_html,
-                           listaCorreosDestinatarios, request)
-        print("Bracelet alerta temperatura")
+        if se_debe_reportar(NAME_SENSOR_TEMP, str(macPulsera)):
+            Utilities.sendMail(asunto, html_message, imagenes_en_html,
+                               listaCorreosDestinatarios, request)
+            print("Bracelet alerta temperatura")
 
 
 @execute_in_thread(name="hilo ValidarNivelBateria")
@@ -267,9 +299,10 @@ def ValidarNivelBateria(nivelBateria, baliza, macPulsera, request):
 
         listaCorreosDestinatarios = getDestinatariosCorreos()
         if len(listaCorreosDestinatarios) > 0:
-            Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
-                               listaCorreosDestinatarios, request)
-            print("Bracelet alerta bateria baja")
+            if se_debe_reportar(NAME_SENSOR_BAT, str(macPulsera)):
+                Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
+                                   listaCorreosDestinatarios, request)
+                print("Bracelet alerta bateria baja")
 
 
 @execute_in_thread(name="hilo ValidarPPM")
@@ -301,9 +334,10 @@ def ValidarPPM(macPulsera, ppmActual, request):
 
     listaCorreosDestinatarios = getDestinatariosCorreos()
     if len(listaCorreosDestinatarios) > 0 and hayAlarma:
-        Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
-                           listaCorreosDestinatarios, request)
-        print("Bracelet alerta temperatura")
+        if se_debe_reportar(NAME_SENSOR_PPM, str(macPulsera)):
+            Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
+                               listaCorreosDestinatarios, request)
+            print("Bracelet alerta PPM")
 
 
 def DeterminarIgualdad_o_cercano(valorAnterior, valorActual, variacion):
@@ -349,7 +383,8 @@ def ProcesarUbicacion(baliza, macPulsera, rssi):
     else:
         histoRssi.save()
 
-    print("Baliza:", baliza, ", Pulsera:", macPulsera, ", metros:", distancia)
+    # print("Baliza:", baliza, ", Pulsera:", macPulsera, ", metros:", distancia)
+    print("Falta poner esta pulsera en el historial de ubicacion para mostrar que esta dentro de un area especifico")
 
 
 # @count_elapsed_time
