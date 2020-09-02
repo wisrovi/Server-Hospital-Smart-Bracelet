@@ -33,31 +33,28 @@ config_files['bienvenido'] = {'File': os.path.join(FOLDER_HTML, 'welcome.html'),
 @execute_in_thread(name="hilo request")
 def generate_request_get(url, success_callback, error_callback):
     response = requests.get(url)
-    print(url)
+    #print(url)
     if response.status_code == 200:
         success_callback(response.json())
     else:
         error_callback(url)
 
 
+from authentication.settings import MEDIA_ROOT
+from django.contrib.staticfiles import finders
+
+
 def ChargeImage(url_path):
-    #url_path =  os.path.join("images",  url_path )
+    url_path_folder =  os.path.join("emails",  url_path )
+    MIMEImage_search = "<" + url_path.split(".")[0] + ">"
 
-
-    cid = url_path.split("/")
-    cid_search = cid[-1].split(".")[0]
-    MIMEImage_search = "<" + cid_search + ">"
-
-    msgImage = None
-    if os.path.isfile(url_path):
-        with open(url_path, 'rb') as fp:
-            print("poniendo imagenes en email", url_path)
-            msgImage = MIMEImage(fp.read())
-            msgImage.add_header('Content-ID', MIMEImage_search)
-    print("No se encontro la imagen para cargar", url_path)
-    return None
-
-
+    #if os.path.isfile(url_path):
+    with open(finders.find(url_path_folder), 'rb') as fp:
+        imagen_cargar = fp.read()
+    msgImage = MIMEImage(imagen_cargar)
+    msgImage.add_header('Content-ID', MIMEImage_search)
+    #print(url_path_folder, MIMEImage_search)
+    return msgImage
 
 
 def send_mail(asunto, html, firma, correo):
@@ -68,25 +65,20 @@ def send_mail(asunto, html, firma, correo):
         msg['From'] = EMAIL_HOST_USER
         msg['To'] = correo
 
-
         part1 = MIMEText(html, 'html')
+        msg.attach(part1)
 
         if isinstance(firma, list):
             for path_url in firma:
                 mime_image = ChargeImage(path_url)
-                if mime_image is not  None:
-                    msg.attach(mime_image)
+                msg.attach(mime_image)
         else:
             part2 = MIMEText(firma, 'plain')
             msg.attach(part2)
 
-        msg.attach(part1)
-
-
 
         server = smtplib.SMTP('{}: {}'.format(EMAIL_HOST, EMAIL_PORT))
         server.starttls()
-
 
         server.login(msg['From'], EMAIL_HOST_PASSWORD)
 

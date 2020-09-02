@@ -14,7 +14,16 @@ import os
 
 listadoMacsReportadas = list()
 
-PARAMETROS = dict()
+AlertasSensores = dict()
+SensoresDisponiblesEnPulsera = list()
+SensoresDisponiblesEnPulsera.append("TEM")
+SensoresDisponiblesEnPulsera.append("VOL")
+SensoresDisponiblesEnPulsera.append("PRO")
+SensoresDisponiblesEnPulsera.append("CAI")
+SensoresDisponiblesEnPulsera.append("PPM")
+SensoresDisponiblesEnPulsera.append("ACE")
+//TODO: Falta crear un metodo para que solo se envie un correo cada 5 minutos, siempre que sea la misma alerta, asi evitar enviar un correo cada segundo
+
 
 
 # def render_to_string(nameFile, dictionary):
@@ -42,8 +51,7 @@ PARAMETROS = dict()
 
 
 def ModifyHtml(url_path, html):
-    cid = url_path.split("/")
-    cid_search = cid[-1].split(".")[0]
+    cid_search = url_path.split(".")[0]
     html = html.replace(url_path, "cid:" + cid_search)
     return html
 
@@ -69,6 +77,23 @@ def PutImagesHtml(imagenes_en_html, html_message):
     return html_message
 
 
+def ExtractMac(string):
+    macPulsera_complete = string[0:2] \
+                          + ":" + string[2:4] \
+                          + ":" + string[4:6] \
+                          + ":" + string[6:8] \
+                          + ":" + string[8:10] \
+                          + ":" + string[10:12]
+    return macPulsera_complete
+
+
+def getUmbrales(macPulsera):
+    pulsera = Bracelet.objects.get(macDispositivo=macPulsera)
+    print("pulsera: ", pulsera)
+    umbrales = BraceletUmbrals.objects.get(bracelet=pulsera)
+    return umbrales
+
+
 @execute_in_thread(name="hilo ValidarExisteBaliza")
 def ValidarExisteBaliza(baliza, request):
     baliza = ExtractMac(baliza[0])
@@ -84,9 +109,8 @@ def ValidarExisteBaliza(baliza, request):
     diccionarioDatos = dict()
     diccionarioDatos[PARAMETROS['Var'][0]] = str(baliza)
     imagenes_en_html = list()
-    imagenes_en_html.append("LOGOFCV.png") #os.path.join("img", "LOGOFCV.png"))
-    imagenes_en_html.append("baliza.jpg") #os.path.join("img", "baliza.jpg"))
-
+    imagenes_en_html.append("LOGOFCV.png")
+    imagenes_en_html.append("baliza.jpg")
     html_message = render_to_string(PARAMETROS['File'],
                                     diccionarioDatos)
     html_message = PutImagesHtml(imagenes_en_html, html_message)
@@ -112,62 +136,55 @@ def ValidarExisteBracelet(bracelet, baliza, request):
         if bracelet == brac.macDispositivo:
             return True
 
+    PARAMETROS = config_files['nuevo_bracelet']
+
+
     diccionarioDatos = dict()
-    diccionarioDatos['ADMIN'] = str('Admin Server')
-    diccionarioDatos['BALIZA'] = str(baliza)
-    diccionarioDatos['MAC'] = str(bracelet)
-    diccionarioDatos['PROJECT'] = str('Hospital Smart Bracelet')
-    diccionarioDatos['FIRMA'] = str('WISROVI')
-    html_message = render_to_string('email/bracelet_report_bad_sensors.html',
+    diccionarioDatos[PARAMETROS['Var'][0]] = str(bracelet)
+
+    imagenes_en_html = list()
+    imagenes_en_html.append("LOGOFCV.png")
+    imagenes_en_html.append("manilla.jpg")
+
+    html_message = render_to_string(PARAMETROS['File'],
                                     diccionarioDatos)
+    html_message = PutImagesHtml(imagenes_en_html, html_message)
 
     asunto = "Nuevo Bracelet por registrar (" + bracelet + ")"
     firmaResumenRemitente = "Hospital Smart Bracelet"
 
     listaDestinatarios = getDestinatariosCorreos()
     if len(listaDestinatarios) > 0:
-        if not diccionarioDatos['MAC'] in listadoMacsReportadas:
-            Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
+        if not str(bracelet) in listadoMacsReportadas:
+            Utilities.sendMail(asunto, html_message, imagenes_en_html,
                                listaDestinatarios, request)
             print("Nuevo Bracelet encontrado")
-            listadoMacsReportadas.append(diccionarioDatos['MAC'])
+            listadoMacsReportadas.append(str(bracelet))
     return False
-
-
-def ExtractMac(string):
-    macPulsera_complete = string[0:2] \
-                          + ":" + string[2:4] \
-                          + ":" + string[4:6] \
-                          + ":" + string[6:8] \
-                          + ":" + string[8:10] \
-                          + ":" + string[10:12]
-    return macPulsera_complete
-
-
-def getUmbrales(macPulsera):
-    pulsera = Bracelet.objects.get(macDispositivo=ExtractMac(macPulsera))
-    umbrales = BraceletUmbrals.objects.get(bracelet=pulsera)
-    return umbrales
 
 
 @execute_in_thread(name="hilo ValidarCaida")
 def ValidarCaida(baliza, macPulsera, caida, request):
     if caida:
         diccionarioDatos = dict()
-        diccionarioDatos['ADMIN'] = str('Admin Server')
-        diccionarioDatos['BALIZA'] = str(baliza)
-        diccionarioDatos['MAC'] = str(ExtractMac(macPulsera))
-        diccionarioDatos['PROJECT'] = str('Hospital Smart Bracelet')
-        diccionarioDatos['FIRMA'] = str('WISROVI')
-        html_message = render_to_string(
-            'email/bracelet_alerta_persona_caida.html',
-            diccionarioDatos)
+        imagenes_en_html = list()
+
+        PARAMETROS = config_files['alerta_caida']
+        diccionarioDatos[PARAMETROS['Var'][0]] = str(ExtractMac(macPulsera))
+        diccionarioDatos[PARAMETROS['Var'][1]] = str('<< Paciente >>')
+        imagenes_en_html.append("LOGOFCV.png")
+        imagenes_en_html.append("caida.jpg")
+
+        html_message = render_to_string(PARAMETROS['File'],
+                                        diccionarioDatos)
+        html_message = PutImagesHtml(imagenes_en_html, html_message)
+
         asunto = "Alerta, persona caida (" + ExtractMac(macPulsera) + ")"
         firmaResumenRemitente = "Hospital Smart Bracelet"
 
         listaCorreosDestinatarios = getDestinatariosCorreos()
         if len(listaCorreosDestinatarios) > 0:
-            Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
+            Utilities.sendMail(asunto, html_message, imagenes_en_html,
                                listaCorreosDestinatarios, request)
             print("Bracelet alerta caida")
 
@@ -196,16 +213,21 @@ def ValidadProximidad(baliza, macPulsera, proximidad, request):
 
 @execute_in_thread(name="hilo ValidarTemperatura")
 def ValidarTemperatura(macPulsera, temperaturaActual, request):
+    macPulsera = ExtractMac(macPulsera)
     umbrales = getUmbrales(macPulsera)
 
     diccionarioDatos = dict()
-    diccionarioDatos['ADMIN'] = str('Admin Server')
-    diccionarioDatos['MAC'] = str(macPulsera)
-    diccionarioDatos['PROJECT'] = str('Hospital Smart Bracelet')
-    diccionarioDatos['FIRMA'] = str('WISROVI')
-    html_message = render_to_string(
-        'email/bracelet_alerta_persona_seQuitoPulsera.html',
-        diccionarioDatos)
+    imagenes_en_html = list()
+    PARAMETROS = config_files['alerta_temperatura']
+    diccionarioDatos[PARAMETROS['Var'][0]] = str(macPulsera)
+    diccionarioDatos[PARAMETROS['Var'][1]] = str('<< Paciente >>')
+    imagenes_en_html.append("LOGOFCV.png")
+    imagenes_en_html.append("iconoCaution.jpg")
+
+    html_message = render_to_string(PARAMETROS['File'],
+                                    diccionarioDatos)
+    html_message = PutImagesHtml(imagenes_en_html, html_message)
+
     asunto = None
     hayAlarma = False
 
@@ -223,7 +245,7 @@ def ValidarTemperatura(macPulsera, temperaturaActual, request):
 
     listaCorreosDestinatarios = getDestinatariosCorreos()
     if len(listaCorreosDestinatarios) > 0 and hayAlarma:
-        Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
+        Utilities.sendMail(asunto, html_message, imagenes_en_html,
                            listaCorreosDestinatarios, request)
         print("Bracelet alerta temperatura")
 
@@ -252,6 +274,7 @@ def ValidarNivelBateria(nivelBateria, baliza, macPulsera, request):
 
 @execute_in_thread(name="hilo ValidarPPM")
 def ValidarPPM(macPulsera, ppmActual, request):
+    macPulsera = ExtractMac(macPulsera)
     umbrales = getUmbrales(macPulsera)
 
     diccionarioDatos = dict()
