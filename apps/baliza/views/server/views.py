@@ -254,7 +254,7 @@ class ServerReceivedCreateView(FormView):
                                 ValidarPPM(bracelet['MAC'], int(bracelet['PPM']), request)
                                 ValidarNivelBateria(int(bracelet['BAT']), baliza, bracelet['MAC'], request)
 
-                                print("Procesando datos de ubicación")
+                                # print("Procesando datos de ubicación")
                                 ProcesarUbicacion(baliza, bracelet['MAC'], bracelet['RSI'])
                 else:
                     data['error'] = 'Error en datos, favor intentelo de nuevo'

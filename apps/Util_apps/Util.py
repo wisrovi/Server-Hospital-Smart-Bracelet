@@ -1,8 +1,6 @@
 from apps.Util_apps.Decoradores import execute_in_thread
 import requests
-from django.contrib import messages  # import messages
-# from django.core.mail import send_mail
-# from django.utils.html import strip_tags
+from django.contrib import messages
 
 from authentication.Config.ConfigMail import EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD, EMAIL_HOST_USER
 
@@ -11,6 +9,9 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 import smtplib
 import os
+import datetime
+
+
 
 FOLDER_HTML = "PLANTILLAFCV"
 config_files = dict()
@@ -28,6 +29,11 @@ config_files['nuevo_bracelet'] = {'File': os.path.join(FOLDER_HTML, 'NewBrazalet
 config_files['bienvenido'] = {'File': os.path.join(FOLDER_HTML, 'welcome.html'), 'Var': ['user']}
 
 
+
+def getFechaHora():
+    fecha_hora = datetime.datetime.now()
+    # fecha_hora = (fecha_hora.year, fecha_hora.month, fecha_hora.day, fecha_hora.hour, fecha_hora.minute, fecha_hora.second)
+    return fecha_hora
 
 
 @execute_in_thread(name="hilo request")
@@ -67,31 +73,30 @@ def send_mail(asunto, html, firma, correo):
         part1 = MIMEText(html, 'html')
         msg.attach(part1)
 
-        print("***************************************************** Hola mundo *****************************************************")
 
         if isinstance(firma, list):
-            print("imagen", firma)
+            # print("imagen", firma)
             for path_url in firma:
                 mime_image = ChargeImage(path_url)
                 msg.attach(mime_image)
         else:
-            print("plano")
+            # print("plano")
             part2 = MIMEText(firma, 'plain')
             msg.attach(part2)
 
-        print("***************************************************** chao mundo *****************************************************")
+        #print("***************************************************** chao mundo *****************************************************")
 
         server = smtplib.SMTP('{}: {}'.format(EMAIL_HOST, EMAIL_PORT))
-        print("***************************************************** conect mundo *****************************************************")
+        #print("***************************************************** conect mundo *****************************************************")
 
         server.starttls()
 
         server.login(msg['From'], EMAIL_HOST_PASSWORD)
-        print("***************************************************** login mundo *****************************************************")
+        #print("***************************************************** login mundo *****************************************************")
 
         server.sendmail(msg['From'], msg['To'], msg.as_string())
         server.quit()
-        print("Correo enviado2", msg['From'])
+        print("***************************************************** {} *****************************************************".format(getFechaHora()))
     except:
         print("failed send email to %s:" % (correo))
 
