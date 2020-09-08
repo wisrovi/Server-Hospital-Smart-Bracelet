@@ -211,11 +211,11 @@ for path_url in imagenes_en_html:
     html_message = ModifyHtml(path_url, html_message)
 
 
-
-user = "hospitalsmartbracelet@fcv.org"
+from authentication.Config.ConfigMail import EMAIL_HOST_USER, EMAIL_HOST_PASSWORD
+user = EMAIL_HOST_USER
 port = 587
 host = 'webmail.fcv.org'
-password = "fBy3clj9fOoKDoj9OtSk"
+password = EMAIL_HOST_PASSWORD
 token = ""  #token aplication
 
 # create message object instance

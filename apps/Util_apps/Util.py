@@ -96,9 +96,9 @@ def send_mail(asunto, html, firma, correo):
 
         server.sendmail(msg['From'], msg['To'], msg.as_string())
         server.quit()
-        print("***************************************************** {} *****************************************************".format(getFechaHora()))
-    except:
-        print("failed send email to %s:" % (correo))
+        # print("***************************************************** {} *****************************************************".format(getFechaHora()))
+    except NameError:
+        print("failed send email to {} - error {}".format(correo, NameError))
 
 
 @execute_in_thread(name="Send Mail")

@@ -4,15 +4,13 @@ import apps.Util_apps.Util as Utilities
 from apps.Util_apps.Decoradores import execute_in_thread
 from apps.Util_apps.Util import config_files
 from apps.baliza.models import Baliza, RolUsuario, UsuarioRol, Bracelet, BraceletUmbrals, HistorialRSSI, \
-    InstalacionBaliza, Area
+    InstalacionBaliza, Area, HistorialUbicacion
 from apps.baliza.views.server.Libraries.CalculoUbicacion.Library_BLE_location import CalcularPosicion, BalizaInstalada, \
     Ubicacion
+from apps.baliza.views.server.Libraries.ConsultasBaseDatos.ConsultasBaseDatos import BuscarBalizaDB, BuscarBraceletDB
 from apps.baliza.views.server.Libraries.LibraryRSSItoMts import CalcularDistancia
-from authentication.Config.Constants.Contant import rol_enviar_notificaiones_servidor, time_resend_mail, minimo_nivel_bateria
-
-
-
-
+from authentication.Config.Constants.Contant import rol_enviar_notificaiones_servidor, time_resend_mail, \
+    minimo_nivel_bateria
 
 listadoMacsReportadas = list()
 
@@ -22,7 +20,6 @@ NAME_SENSOR_PPM = 'PPM'
 NAME_SENSOR_CAI = 'CAI'
 NAME_SENSOR_BAT = 'BAT'
 AlertasSensoresDic = dict()
-
 
 
 # def render_to_string(nameFile, dictionary):
@@ -47,8 +44,6 @@ AlertasSensoresDic = dict()
 #                     data = data.replace(llave, dictionary[key])
 #                     break
 #     return data
-
-
 
 
 def se_debe_reportar(nameSensor, macBracelet):
@@ -76,7 +71,7 @@ def se_debe_reportar(nameSensor, macBracelet):
         respuesta = True
 
     if respuesta:
-        print("***************************************************** email send *****************************************************")
+        # print("***************************************************** email send *****************************************************")
         print("Bracelet alerta ", nameSensor)
     return respuesta
 
@@ -124,17 +119,15 @@ def getUmbrales(macPulsera):
     umbrales = BraceletUmbrals.objects.get(bracelet=pulsera)
     return umbrales
 
+
 # correo completo
 @execute_in_thread(name="hilo ValidarExisteBaliza")
 def ValidarExisteBaliza(baliza, request):
     baliza = ExtractMac(baliza[0])
 
-    balizasExistentes = Baliza.objects.all()
-    for baliz in balizasExistentes:
-        valor_comparar_1 = baliz.macDispositivoBaliza
-        valor_comparar_2 = baliza
-        if valor_comparar_1 == valor_comparar_2:
-            return True
+    find, balizaObjectModel = BuscarBalizaDB(baliza)
+    if find:
+        return True, balizaObjectModel
 
     PARAMETROS = config_files['nueva_baliza']
     diccionarioDatos = dict()
@@ -153,22 +146,21 @@ def ValidarExisteBaliza(baliza, request):
         if not str(baliza) in listadoMacsReportadas:
             Utilities.sendMail(asunto, html_message, imagenes_en_html,
                                listaDestinatarios, request)
-            print("Nueva Baliza encontrada")
+            # print("Nueva Baliza encontrada")
             listadoMacsReportadas.append(str(baliza))
-    return False
+    return False, None
+
 
 # correo completo
 @execute_in_thread(name="hilo ValidarExisteBracelet")
 def ValidarExisteBracelet(bracelet, baliza, request):
     bracelet = ExtractMac(bracelet)
 
-    braceletsExistentes = Bracelet.objects.all()
-    for brac in braceletsExistentes:
-        if bracelet == brac.macDispositivo:
-            return True
+    find, braceletObject = BuscarBraceletDB(bracelet)
+    if find:
+        return True, braceletObject
 
     PARAMETROS = config_files['nuevo_bracelet']
-
 
     diccionarioDatos = dict()
     diccionarioDatos[PARAMETROS['Var'][0]] = str(bracelet)
@@ -191,17 +183,18 @@ def ValidarExisteBracelet(bracelet, baliza, request):
                                listaDestinatarios, request)
             print("Nuevo Bracelet encontrado")
             listadoMacsReportadas.append(str(bracelet))
-    return False
+    return False, None
+
 
 # correo completo
 @execute_in_thread(name="hilo ValidarCaida")
-def ValidarCaida(baliza, macPulsera, caida, request):
+def ValidarCaida(macPulsera, caida, request):
     if caida:
         diccionarioDatos = dict()
         imagenes_en_html = list()
 
         PARAMETROS = config_files['alerta_caida']
-        diccionarioDatos[PARAMETROS['Var'][0]] = str(ExtractMac(macPulsera))
+        diccionarioDatos[PARAMETROS['Var'][0]] = macPulsera
         diccionarioDatos[PARAMETROS['Var'][1]] = str('<< Paciente >>')
         imagenes_en_html.append("LOGOFCV.png")
         imagenes_en_html.append("caida.jpg")
@@ -210,23 +203,23 @@ def ValidarCaida(baliza, macPulsera, caida, request):
                                         diccionarioDatos)
         html_message = PutImagesHtml(imagenes_en_html, html_message)
 
-        asunto = "Alerta, persona caida (" + ExtractMac(macPulsera) + ")"
-        firmaResumenRemitente = "Hospital Smart Bracelet"
+        asunto = "Alerta, persona caida (" + macPulsera + ")"
 
         listaCorreosDestinatarios = getDestinatariosCorreos()
         if len(listaCorreosDestinatarios) > 0:
-            if se_debe_reportar(NAME_SENSOR_CAI, str(macPulsera)):
+            if se_debe_reportar(NAME_SENSOR_CAI, macPulsera):
                 Utilities.sendMail(asunto, html_message, imagenes_en_html,
                                    listaCorreosDestinatarios, request)
 
+
 # correo completo
 @execute_in_thread(name="hilo ValidadProximidad")
-def ValidadProximidad(baliza, macPulsera, proximidad, request):
-    if proximidad == False:
+def ValidadProximidad(macPulsera, proximidad, request):
+    if not proximidad:
         diccionarioDatos = dict()
         imagenes_en_html = list()
         PARAMETROS = config_files['alerta_proximidad']
-        diccionarioDatos[PARAMETROS['Var'][0]] = str(macPulsera)
+        diccionarioDatos[PARAMETROS['Var'][0]] = macPulsera
         diccionarioDatos[PARAMETROS['Var'][1]] = str('<< Paciente >>')
         imagenes_en_html.append("LOGOFCV.png")
         imagenes_en_html.append("no_signal.png")
@@ -236,24 +229,21 @@ def ValidadProximidad(baliza, macPulsera, proximidad, request):
         html_message = PutImagesHtml(imagenes_en_html, html_message)
 
         asunto = "Alerta, persona se quitó el bracelet (" + macPulsera + ")"
-        firmaResumenRemitente = "Hospital Smart Bracelet"
 
         listaCorreosDestinatarios = getDestinatariosCorreos()
         if len(listaCorreosDestinatarios) > 0:
-            if se_debe_reportar(NAME_SENSOR_PRO, str(macPulsera)):
+            if se_debe_reportar(NAME_SENSOR_PRO, macPulsera):
                 Utilities.sendMail(asunto, html_message, imagenes_en_html,
                                    listaCorreosDestinatarios, request)
 
+
 # correo completo
 @execute_in_thread(name="hilo ValidarTemperatura")
-def ValidarTemperatura(macPulsera, temperaturaActual, request):
-    macPulsera = ExtractMac(macPulsera)
-    umbrales = getUmbrales(macPulsera)
-
+def ValidarTemperatura(macPulsera, temperaturaActual, umbrales, request):
     diccionarioDatos = dict()
     imagenes_en_html = list()
     PARAMETROS = config_files['alerta_temperatura']
-    diccionarioDatos[PARAMETROS['Var'][0]] = str(macPulsera)
+    diccionarioDatos[PARAMETROS['Var'][0]] = macPulsera
     diccionarioDatos[PARAMETROS['Var'][1]] = str('<< Paciente >>')
     imagenes_en_html.append("LOGOFCV.png")
     imagenes_en_html.append("iconoCaution.jpg")
@@ -268,14 +258,12 @@ def ValidarTemperatura(macPulsera, temperaturaActual, request):
     temperaturaActual = temperaturaActual / 10
 
     if temperaturaActual > umbrales.maximaTemperatura:
-        asunto = "Alerta, persona (" + macPulsera + ")" + " tiene temperatura alta (" + str(temperaturaActual) + ")"
+        asunto = "Alerta, persona (" + macPulsera + ")" + " con temperatura alta (" + str(temperaturaActual) + ")"
         hayAlarma = True
 
     if temperaturaActual < umbrales.minimaTemperatura:
-        asunto = "Alerta, persona (" + macPulsera + ")" + " tiene temperatura baja (" + str(temperaturaActual) + ")"
+        asunto = "Alerta, persona (" + macPulsera + ")" + " con temperatura baja (" + str(temperaturaActual) + ")"
         hayAlarma = True
-
-    firmaResumenRemitente = "Hospital Smart Bracelet"
 
     listaCorreosDestinatarios = getDestinatariosCorreos()
     if len(listaCorreosDestinatarios) > 0 and hayAlarma:
@@ -284,12 +272,9 @@ def ValidarTemperatura(macPulsera, temperaturaActual, request):
                                listaCorreosDestinatarios, request)
 
 
-
 @execute_in_thread(name="hilo ValidarNivelBateria")
 def ValidarNivelBateria(nivelBateria, baliza, macPulsera, request):
     if nivelBateria < minimo_nivel_bateria:
-
-
         diccionarioDatos = dict()
         diccionarioDatos['ADMIN'] = str('Admin Server')
         diccionarioDatos['BALIZA'] = str(baliza)
@@ -307,14 +292,10 @@ def ValidarNivelBateria(nivelBateria, baliza, macPulsera, request):
             if se_debe_reportar(NAME_SENSOR_BAT, str(macPulsera)):
                 Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
                                    listaCorreosDestinatarios, request)
-                print("Bracelet alerta bateria baja")
 
 
 @execute_in_thread(name="hilo ValidarPPM")
-def ValidarPPM(macPulsera, ppmActual, request):
-    macPulsera = ExtractMac(macPulsera)
-    umbrales = getUmbrales(macPulsera)
-
+def ValidarPPM(macPulsera, ppmActual, umbrales, request):
     diccionarioDatos = dict()
     imagenes_en_html = list()
     PARAMETROS = config_files['alerta_ppm']
@@ -326,10 +307,9 @@ def ValidarPPM(macPulsera, ppmActual, request):
     html_message = render_to_string(PARAMETROS['File'],
                                     diccionarioDatos)
     html_message = PutImagesHtml(imagenes_en_html, html_message)
+
     asunto = None
-
     hayAlarma = False
-
     if ppmActual > umbrales.maximaPulsoCardiaco:
         asunto = "Alerta, persona (" + macPulsera + ")" + " tiene PPM alta (" + str(ppmActual) + ")"
         hayAlarma = True
@@ -338,13 +318,10 @@ def ValidarPPM(macPulsera, ppmActual, request):
         asunto = "Alerta, persona (" + macPulsera + ")" + " tiene PPM baja (" + str(ppmActual) + ")"
         hayAlarma = True
 
-    firmaResumenRemitente = "Hospital Smart Bracelet"
-
     listaCorreosDestinatarios = getDestinatariosCorreos()
     if len(listaCorreosDestinatarios) > 0 and hayAlarma:
-        print("alarma PPM ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        if se_debe_reportar(NAME_SENSOR_PPM, str(macPulsera)):
-            Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
+        if se_debe_reportar(NAME_SENSOR_PPM, macPulsera):
+            Utilities.sendMail(asunto, html_message, imagenes_en_html,
                                listaCorreosDestinatarios, request)
 
 
@@ -365,52 +342,67 @@ def DeterminarIgualdad_o_cercano(valorAnterior, valorActual, variacion):
     return True
 
 
+def ActualizarAreaPosicion(macPulsera):
+    CartesianoFinal, idsBalizasUsadas, pisoDeseado = DeterminarPocisionPulsera(macPulsera)
+
+    if pisoDeseado is not None:
+        todas_areas_este_piso = Area.objects.filter(piso=pisoDeseado)
+        historial_esta_pulsera = HistorialUbicacion.objects.filter(bracelet=macPulsera).order_by(
+            '-fechaIngresoArea')
+
+        # print(CartesianoFinal, todas_areas_este_piso)
+        for are in todas_areas_este_piso:
+            xi = float(are.xInicial)
+            xf = float(are.xFinal)
+            yi = float(are.yInicial)
+            yf = float(are.yFinal)
+            if xi < CartesianoFinal[0] < xf and yi < CartesianoFinal[1] < yf:
+                if len(historial_esta_pulsera) == 0:
+                    histo = HistorialUbicacion()
+                    histo.area = are
+                    histo.bracelet = macPulsera
+                    histo.save()
+                else:
+                    for register in historial_esta_pulsera:
+                        if register.fechaSalidaArea is None:
+                            if register.area != are:
+                                register.fechaSalidaArea = Utilities.getFechaHora()
+                                register.save()
+                                # print("la persona cambio de area")
+                                histo = HistorialUbicacion()
+                                histo.area = are
+                                histo.bracelet = macPulsera
+                                histo.save()
+                                # print("Creando nuevo registro")
+                            else:
+                                pass
+                                # print("la persona sigue en el area", are.area)
+
+
 @execute_in_thread(name="hilo ProcesarUbicacion")
-def ProcesarUbicacion(baliza, macPulsera, rssi):
-    macPulsera = ExtractMac(macPulsera)
-    pulsera = Bracelet.objects.get(macDispositivo=macPulsera)
+def ProcesarUbicacion(balizaNow, pulsera, rssiNow):
+    # measuredPower = pulsera.txPower
+    # distancia = CalcularDistancia(measuredPower, rssi)
 
-    measuredPower = pulsera.txPower
-    rssi = int(rssi)
-
-    distancia = CalcularDistancia(measuredPower, rssi)
-
-    macBaliza = ExtractMac(baliza[0])
-
-    balizaNow = Baliza.objects.get(macDispositivoBaliza=macBaliza)
-    histoRssi = HistorialRSSI()
-    histoRssi.baliza = balizaNow
-    histoRssi.bracelet = pulsera
-    histoRssi.rssi_signal = rssi
-
+    thereSaveRegister = False
     ultimoRegistro = HistorialRSSI.objects.filter(bracelet=pulsera,
                                                   baliza=balizaNow).order_by('-fechaRegistro')
     if len(ultimoRegistro) > 0:
-        if ultimoRegistro[0].rssi_signal != rssi:
-            histoRssi.save()
+        if ultimoRegistro[0].rssi_signal != rssiNow:
+            # //TODO: Guardar unicamente cuando haya una diferencia superior al 5%, de lo contrario no guardar
+            thereSaveRegister = True
     else:
+        thereSaveRegister = True
+
+    if thereSaveRegister:
+        histoRssi = HistorialRSSI()
+        histoRssi.baliza = balizaNow
+        histoRssi.bracelet = pulsera
+        histoRssi.rssi_signal = rssiNow
         histoRssi.save()
 
-    # Buscando coordenada actual
-    CartesianoFinal, idsBalizasUsadas, pisoDeseado = DeterminarPocisionPulsera(pulsera)
-    print(pulsera.macDispositivo, CartesianoFinal)
-    if CartesianoFinal is not None:
-        print(CartesianoFinal, idsBalizasUsadas, pisoDeseado)
-
-        # print("Baliza:", baliza, ", Pulsera:", macPulsera, ", metros:", distancia)
-        #aca se debe calcular la coordenada de la pulsera actual y buscar el area en la que está
-        #si el area anterior es diferente al area actual se debe hacer un registro, de lo contrario no se registra y termina el proceso
-        print("Falta poner esta pulsera en el historial de ubicacion para mostrar que esta dentro de un area especifico")
-        areas = Area.objects.all()
-        for area in areas:
-            pis = area.piso
-            print(pis, pisoDeseado)
-            if pis == pisoDeseado:
-                print("Esta en el mismo piso")
-                xi = area.xInicial
-                xf = area.xFinal
-                yi = area.yInicial
-                yf = area.yFinal
+    # //TODO: Revisar que este proceso haga la menor cantidad de consultas a la base de datos
+    ActualizarAreaPosicion(pulsera)
 
 
 # @count_elapsed_time
@@ -422,6 +414,7 @@ def DeterminarPocisionPulsera(pulsera, pisoDeseado=None):
     lastDate = None
     datosEstaPulsera = HistorialRSSI.objects.filter(bracelet=pulsera).order_by('-fechaRegistro')
     macBalizasProcesadas = list()
+    piso_detectado = None
     if len(datosEstaPulsera) > 0:
         for dato in datosEstaPulsera:
             if lastDate is None:
@@ -438,8 +431,8 @@ def DeterminarPocisionPulsera(pulsera, pisoDeseado=None):
                         pisoInstalacion = datosInstalacionBaliza.piso
 
                         puntoInstalacion = (datosInstalacionBaliza.instalacionX, datosInstalacionBaliza.instalacionY)
-                        print(pulsera.descripcion, "--->", puntoInstalacion, "--->",
-                               CalcularDistancia(pulsera.txPower, dato.rssi_signal), "mt", pisoInstalacion)
+                        # print(pulsera.descripcion, "--->", puntoInstalacion, "--->",
+                        #        CalcularDistancia(pulsera.txPower, dato.rssi_signal), "mt", pisoInstalacion)
 
                         if pisoDeseado is not None:
                             puntoInstalacionBaliza = InstalacionBaliza.objects.filter(baliza=baliza)
@@ -456,18 +449,23 @@ def DeterminarPocisionPulsera(pulsera, pisoDeseado=None):
                                             dist=CalcularDistancia(pulsera.txPower, dato.rssi_signal))
                                     )
                         else:
-                            listadoBalizas.append(
-                                BalizaInstalada(
-                                    ubi=Ubicacion(
-                                        x=datosInstalacionBaliza.instalacionX,
-                                        y=datosInstalacionBaliza.instalacionY),
-                                    nombre=baliza.macDispositivoBaliza,
-                                    dist=CalcularDistancia(pulsera.txPower, dato.rssi_signal))
-                            )
+                            if piso_detectado is None or piso_detectado == pisoInstalacion:
+                                piso_detectado = pisoInstalacion
+                                listadoBalizas.append(
+                                    BalizaInstalada(
+                                        ubi=Ubicacion(
+                                            x=datosInstalacionBaliza.instalacionX,
+                                            y=datosInstalacionBaliza.instalacionY),
+                                        nombre=baliza.macDispositivoBaliza,
+                                        dist=CalcularDistancia(pulsera.txPower, dato.rssi_signal))
+                                )
 
         if len(listadoBalizas) >= 3:
             CartesianoFinal, idsBalizasUsadas = CalcularPosicion(listadoBalizas)
+            if pisoDeseado is None:
+                pisoDeseado = piso_detectado
             return CartesianoFinal, idsBalizasUsadas, pisoDeseado
         else:
-            print(len(listadoBalizas))
+            # print(len(listadoBalizas))
+            pass
     return None, None, None

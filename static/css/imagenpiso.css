@@ -1,6 +1,19 @@
-#brand_div {
-    width:770px;
-    height:370px;
-    background: url("images/plano.png") no-repeat;
-    background-size: cover;
-}
+
+
+/*#brand_div {*/
+/*    width:770px;*/
+/*    height:370px;*/
+/*    background: url("../../images/plano.png") no-repeat;*/
+/*    background-size: cover;*/
+/*}*/
+
+/*circle[fill="#f7aa3b"]:after {*/
+/*    background-image: url(../../images/person.png);*/
+/*    background-position: center center;*/
+/*    background-repeat: no-repeat;*/
+/*    display: block;*/
+/*    background-color: transparent;*/
+/*    background-size: contain;*/
+/*    content: " ";*/
+/*    color: blue;*/
+/*}*/

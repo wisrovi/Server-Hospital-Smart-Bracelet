@@ -3,7 +3,7 @@
 
 {% block head %}
     {% include 'JS/JS_SELECT2.html' %}
-{#    <link rel="stylesheet" type="text/css" href={% static 'css/imagenpiso.css' %}/>#}
+{#        <link rel="stylesheet" type="text/css" href={% static 'css/imagenpiso.css' %}/>#}
 {% endblock %}
 
 {% block content %}
@@ -25,6 +25,10 @@
                     {{ form.ubicacion }}
                 </div>
                 <div class="form-group">
+                    <label>Area</label>
+                    {{ form.area }}
+                </div>
+                <div class="form-group">
                     <div id="brand_div" style="top:100px; left:100px;">
                         <div id="series_chart_div" style="width: 1080px; height: 600px;"></div>
                     </div>
@@ -38,14 +42,14 @@
 {% block javascript %}
     {% include 'JS/JS_CHART.html' %}
     <script type="text/javascript">
-        function refreshCSS(){
+        function refreshCSS() {
             let links = document.getElementsByTagName('link');
             for (let i = 0; i < links.length; i++) {
                 if (links[i].getAttribute('rel') === 'stylesheet') {
                     let href = links[i].getAttribute('href').split('?')[0];
 
                     let newHref = href + '?version='
-                                + new Date().getMilliseconds();
+                        + new Date().getMilliseconds();
 
                     links[i].setAttribute('href', newHref);
                 }
@@ -62,38 +66,160 @@
             var dataChart = google.visualization.arrayToDataTable(dataCharArray);
 
             var options = {
-            title: 'Listado de Balizas y Manillas',
-            hAxis: {
-                title: 'Distancia en metros eje X',
-                titleTextStyle: { color: 'black', fontSize: 10, bold: true, italic: true }, //titulo del eje X y estilo
-                textStyle: { color: 'black', fontSize: 15, bold: true, italic: true },//tamaño y estilo de los numeros del eje X
-                maxValue: 16, //Fija los valores del eje x
-                gridlines: { count: 0 } //Eliminar las lineas del eje x
-            },
-            vAxis: {
-                title: 'Distancia en metros eje Y',
-                titleTextStyle: { color: 'black', fontSize: 10, bold: true, italic: true },//titulo del eje Y
-                textStyle: { color: 'black', fontSize: 15, bold: true, italic: true }, //tamaño y estilo de los numeros del eje Y
-                maxValue: 12, //Fija los valores del eje x
-                gridlines: { count: 0 }//Eliminar las lineas del eje x
-            },
-            legend: { position: 'bottom', textStyle: { color: 'black', fontSize: 25, fontName: "Calibri", bold: true, italic: false } },//Modificación del texto y posición de la leyenda
-            series: { 'Baliza': { color: "#98183a" }, 'Manilla': { color: "#f7aa3b" } },//Colores de las series de la graficas
-            //backgroundColor:{fill: {color:"#a4a7ad"},stroke: {color: "#98183a"}, strokeWidth: 10},//color de fondo y marco
-            backgroundColor:{fill: {color:'none'}, stroke: {color: "#98183a"}, strokeWidth: 10},//color de fondo y marco
-            //backgroundColor: 'none', //Quitar el dondo y marco de la grafica
-            bubble: { textStyle: { color: "blue", fontName: "Calibri", fontSize: 0.1 }, opacity: 0.7, stroke: "black" },//Estilo de la burbuja y texto de la misma
-            chartArea: { left: 100, top: 100, width: '75%', height: '60%' },//Configuración del área del grafico
-            sizeAxis: { minValue: 0, maxSize: 15 },//Tamaño de la burbuja
-            tooltip: { textStyle: { color: '#00a2b4', fontName: 'Calibri', fontSize: 25, bold: true, italic: true, showColorCode: true }, trigger: 'focus', }//información de la elección de las burbujas
-            //https://developers.google.com/chart/interactive/docs/gallery/bubblechart#javascript
-        };
+                title: 'Listado de Balizas y Manillas',
+                hAxis: {
+                    title: 'Distancia en metros eje X',
+                    titleTextStyle: {
+                        color: 'black',
+                        fontSize: 10,
+                        bold: true,
+                        italic: true
+                    }, //titulo del eje X y estilo
+                    textStyle: {
+                        color: 'black',
+                        fontSize: 15,
+                        bold: true,
+                        italic: true
+                    },//tamaño y estilo de los numeros del eje X
+                    maxValue: 16, //Fija los valores del eje x
+                    gridlines: {
+                        count: 0
+                    } //Eliminar las lineas del eje x
+                },
+                vAxis: {
+                    title: 'Distancia en metros eje Y',
+                    titleTextStyle: {
+                        color: 'black',
+                        fontSize: 10,
+                        bold: true,
+                        italic: true
+                    },//titulo del eje Y
+                    textStyle: {
+                        color: 'black',
+                        fontSize: 15,
+                        bold: true,
+                        italic: true
+                    }, //tamaño y estilo de los numeros del eje Y
+                    maxValue: 12, //Fija los valores del eje x
+                    gridlines: {
+                        count: 0
+                    }//Eliminar las lineas del eje x
+                },
+                legend: {
+                    position: 'bottom',
+                    textStyle: {
+                        color: 'black',
+                        fontSize: 25,
+                        fontName: "Calibri",
+                        bold: true,
+                        italic: false
+                    }
+                },//Modificación del texto y posición de la leyenda
+                series: {
+                    'Baliza': {
+                        color: "#98183a"
+                    },
+                    'Manilla': {
+                        color: "#f7aa3b"
+                    }
+                },//Colores de las series de la graficas
+                //backgroundColor:{fill: {color:"#a4a7ad"},stroke: {color: "#98183a"}, strokeWidth: 10},//color de fondo y marco
+                backgroundColor: {
+                    fill: {
+                        color: 'none'
+                    },
+                    stroke: {
+                        color: "#98183a"
+                    },
+                    strokeWidth: 10
+                },//color de fondo y marco
+                //backgroundColor: 'none', //Quitar el dondo y marco de la grafica
+                bubble: {
+                    textStyle:
+                        {
+                            color: "blue",
+                            fontName: "Calibri",
+                            fontSize: 0.1
+                        },
+                    opacity: 0.7,
+                    stroke: "black"
+                },//Estilo de la burbuja y texto de la misma
+                chartArea: {
+                    left: 100,
+                    top: 100,
+                    width: '75%',
+                    height: '60%'
+                },//Configuración del área del grafico
+                sizeAxis: {
+                    minValue: 0,
+                    maxSize: 15
+                },//Tamaño de la burbuja
+                tooltip: {
+                    textStyle: {
+                        color: '#00a2b4',
+                        fontName: 'Calibri',
+                        fontSize: 25,
+                        bold: true,
+                        italic: true,
+                        showColorCode: true
+                    }, trigger: 'focus',
+                }//información de la elección de las burbujas
+                //https://developers.google.com/chart/interactive/docs/gallery/bubblechart#javascript
+            };
 
             function selectHandler() {
                 var selectedItem = chart.getSelection()[0];
                 if (selectedItem) {
+                    var tipoDispositivo = dataChart.getValue(selectedItem.row, 3);
+                    if (tipoDispositivo !== 'Manilla') {
+                        return;
+                    }
                     var macDispositivo = dataChart.getValue(selectedItem.row, 0);
-                    alert('El Usuario selecciono la ' + macDispositivo);
+
+                    $.ajax({
+                        url: window.location.pathname,
+                        type: 'POST',
+                        data: {
+                            'action': 'search_sensors',
+                            'mac': macDispositivo
+                        },
+                        dataType: 'json',
+                    }).done(function (data) {
+                        if (data.hasOwnProperty('error')) {
+                            MensajeError(data);
+                            return false;
+                        }
+
+
+                        var bat = data['bat'];
+                        var ppm = data['ppm'];
+                        var pro = data['pro'];
+                        var cai = data['cai'];
+                        var temp = data['temp'];
+                        var fec = data['fec'];
+                        Swal.fire({
+                            position: 'top-end',
+                            title: '<strong>MAC <u>' + macDispositivo + '</u></strong>',
+                            icon: 'info',
+                            html:
+                                '<b>Temperatura: </b>' + temp + '<br/>' +
+                                '<b>PPM: </b>' + ppm + '<br/>' +
+                                '<b>Bateria: </b>' + bat + '<br/>' +
+                                '<b>Postura Pulsera: </b>' + pro + '<br/>' +
+                                '<b>Ubicacion: </b>' + bat + '<br/>' +
+                                '<b>Paciente: </b>' + bat + '<br/>' +
+                                '<b>Fecha Registro : </b>' + fec + '<br/><br/>',
+                            showCloseButton: true,
+                            focusConfirm: false,
+                            confirmButtonAriaLabel: 'Ok, great!'
+                         });
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                        MensajeError(textStatus + ': ' + errorThrown);
+                    }).always(function (data) {
+
+                    });
+
+
                 }
             }
 
@@ -106,19 +232,24 @@
 
         var select_sede = $('select[name="sede"]');
         var select_ubicacion = $('select[name="ubicacion"]');
-
+        var select_area = $('select[name="area"]');
 
 
         $(function () {
             var id;
-            var frecuencia_escaneo = 1000;
-            function doRefresh(){
+            var area_seleccionada = "";
+            var frecuencia_escaneo = 2000;
+
+            var mostrar_grafica = true;
+
+            function doRefresh() {
                 $.ajax({
                     url: window.location.pathname,
                     type: 'POST',
                     data: {
                         'action': 'graph_ubicacion',
-                        'id': id
+                        'id': id,
+                        'area': area_seleccionada
                     },
                     dataType: 'json',
                 }).done(function (data) {
@@ -138,18 +269,26 @@
                             });
                         }
 
-                        if(data['todasBalizas'].length > 0){
+                        if (data['todasBalizas'].length > 0) {
                             google.charts.load('current', {
                                     'packages': ['corechart']
                                 }
                             );
                             google.charts.setOnLoadCallback(drawSeriesChart);
-                        }else{
-                            if(data['todasBalizas'].length === 0 && data['todasPulseras'].length === 0){
-                                MensajeAlerta("No hay Datos para mostrar");
-                            }else{
-                                if(data['todasBalizas'].length === 0){
+                            mostrar_grafica = true;
+                        } else {
+                            if (data['todasBalizas'].length === 0 && data['todasPulseras'].length === 0) {
+                                if (area_seleccionada === "") {
+                                    MensajeAlerta("No hay Datos para mostrar para el piso seleccionado.");
+                                }else{
+                                    MensajeAlerta("No hay Datos para mostrar para el area seleccionada.");
+                                }
+
+                                mostrar_grafica = false;
+                            } else {
+                                if (data['todasBalizas'].length === 0) {
                                     MensajeAlerta("No hay Balizas para mostrar");
+                                    mostrar_grafica = false;
                                 }
                                 {#if(data['todasPulseras'].length === 0){#}
                                 {#    MensajeAlerta("No hay Historial de datos de Pulseras para mostrar.");#}
@@ -165,11 +304,26 @@
                 }).always(function (data) {
 
                 });
-                setTimeout(function() {
-                    doRefresh();
+                setTimeout(function () {
+                    if(mostrar_grafica === true){
+                        doRefresh();
+                    }
                     {#MensajeInfo("Hola mundo")#}
                 }, frecuencia_escaneo);
             }
+
+            select_area.on('change', function () {
+                area_seleccionada = $(this).val();
+                var options = '<option value"">------------------</option>';
+                if (area_seleccionada === "") {
+                    select_area.html(options);
+                    return false;
+                }
+                if(mostrar_grafica === false){
+                    mostrar_grafica = true;
+                    doRefresh();
+                }
+            });
 
             select_ubicacion.on('change', function () {
                 id = $(this).val();
@@ -178,6 +332,29 @@
                     select_ubicacion.html(options);
                     return false;
                 }
+
+                $.ajax({
+                    url: window.location.pathname,
+                    type: 'POST',
+                    data: {
+                        'action': 'search_area',
+                        'id': id
+                    },
+                    dataType: 'json',
+                }).done(function (data) {
+                    if (!data.hasOwnProperty('error')) {
+                        select_area.html('').select2({
+                            theme: "bootstrap4",
+                            language: 'es',
+                            data: data
+                        });
+                        return false;
+                    }
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    MensajeError(textStatus + ': ' + errorThrown);
+                }).always(function (data) {
+
+                });
 
                 doRefresh();
             });

@@ -1,6 +1,6 @@
 from django import forms
 
-from apps.baliza.models import Sede, Piso
+from apps.baliza.models import Sede, Piso, Area
 
 
 class PackBraceletForm(forms.Form):
@@ -36,6 +36,17 @@ class FiltrarGrafica(forms.Form):
             attrs={
                 'class': 'form-control select2',
                 'name': 'Piso',
+                'disable': 'true'
+            }
+        )
+    )
+
+    area = forms.ModelChoiceField(
+        queryset=Area.objects.none(),
+        widget=forms.Select(
+            attrs={
+                'class': 'form-control select2',
+                'name': 'Area',
                 'disable': 'true'
             }
         )

@@ -34,21 +34,17 @@ EMAIL_HOST_PASSWORD = str()
 EMAIL_USE_TLS = bool()
 EMAIL_USE_SSL = bool()
 
-
 usar = 'FCV'
-
 
 if usar == 'FCV':
     EMAIL_HOST = 'webmail.fcv.org'
-    EMAIL_PORT = 587
     EMAIL_HOST_USER = 'hospitalsmartbracelet@fcv.org'
     EMAIL_HOST_PASSWORD = 'fBy3clj9fOoKDoj9OtSk'
-    EMAIL_USE_TLS = True
-    EMAIL_USE_SSL = False
 else:
     EMAIL_HOST = 'smtp.gmail.com'
-    EMAIL_PORT = 587
     EMAIL_HOST_USER = 'hospitalsmartbracelet@gmail.com'
     EMAIL_HOST_PASSWORD = 'Agosto.2020'
-    EMAIL_USE_TLS = True
-    EMAIL_USE_SSL = False
+
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False

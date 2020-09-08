@@ -1,5 +1,3 @@
-from time import time
-
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -9,14 +7,16 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import FormView, ListView, TemplateView
 
 from apps.baliza.models import Bracelet, HistorialBraceletSensors, Baliza, HistorialRSSI, \
-    InstalacionBaliza, Piso
-
+    InstalacionBaliza, Piso, Area
 # Create your views here.
+from apps.baliza.views.server.Libraries.ConsultasBaseDatos.ConsultasBaseDatos import \
+    BuscarHistorialSensoresParaBracelet, BuscarUmbralesBraceletDB
 from apps.baliza.views.server.Libraries.ProcessSensorsData import ValidarExisteBaliza, ValidarExisteBracelet, \
     ExtractMac, \
     ValidarCaida, ValidadProximidad, ValidarTemperatura, ValidarPPM, DeterminarIgualdad_o_cercano, ValidarNivelBateria, \
     ProcesarUbicacion, DeterminarPocisionPulsera
 from apps.baliza.views.server.forms import PackBraceletForm, FiltrarGrafica
+from authentication.Config.Constants.Contant import minimo_nivel_bateria
 
 
 class DatoGraficaBubble:
@@ -31,6 +31,7 @@ class DatoGraficaBubble:
         self.y = y
         self.tipo = tipo
 
+
 def ExtractMac(string):
     macPulsera_complete = string[0:2] \
                           + ":" + string[2:4] \
@@ -39,6 +40,7 @@ def ExtractMac(string):
                           + ":" + string[8:10] \
                           + ":" + string[10:12]
     return macPulsera_complete
+
 
 @method_decorator(login_required(login_url='signin'), name='dispatch')
 class VerPiso(TemplateView):
@@ -95,7 +97,17 @@ class FiltrarGraficaUbicacion(TemplateView):
             action = request.POST['action']
             if action == 'graph_ubicacion':
                 id = request.POST['id']
+                area_seleccionada = request.POST['area']
                 piso = Piso.objects.filter(pk=id)
+
+                if area_seleccionada != "":
+                    area_seleccionada = Area.objects.get(pk=area_seleccionada)
+                    area_seleccionada = (
+                        area_seleccionada.xInicial,
+                        area_seleccionada.yInicial,
+                        area_seleccionada.xFinal,
+                        area_seleccionada.yFinal
+                    )
 
                 ubicacionesBalizasPlano = list()
                 tipoBaliza = "Baliza"
@@ -106,11 +118,29 @@ class FiltrarGraficaUbicacion(TemplateView):
                         pis = instal.piso
                         if pis == piso[0]:
                             elemento = list()
-                            elemento.append(baliza.macDispositivoBaliza)
-                            elemento.append(instalacion[0].instalacionX)
-                            elemento.append(instalacion[0].instalacionY)
-                            elemento.append(tipoBaliza)
-                            ubicacionesBalizasPlano.append(elemento)
+                            coordenadas = (instalacion[0].instalacionX, instalacion[0].instalacionY)
+                            if area_seleccionada != "":
+                                # print("Area en: ({}, {}) -> ({}, {})".format(
+                                #     area_seleccionada[0],
+                                #     area_seleccionada[1],
+                                #     area_seleccionada[2],
+                                #     area_seleccionada[3]
+                                # ))
+                                # print(coordenadas[0], coordenadas[1])
+                                if area_seleccionada[0] < coordenadas[0] < area_seleccionada[2] and \
+                                        area_seleccionada[1] < coordenadas[1] < area_seleccionada[3]:
+                                    elemento.append(baliza.macDispositivoBaliza)
+                                    elemento.append(coordenadas[0])
+                                    elemento.append(coordenadas[1])
+                                    elemento.append(tipoBaliza)
+                                    # print("registro OK")
+                                    ubicacionesBalizasPlano.append(elemento)
+                            else:
+                                elemento.append(baliza.macDispositivoBaliza)
+                                elemento.append(coordenadas[0])
+                                elemento.append(coordenadas[1])
+                                elemento.append(tipoBaliza)
+                                ubicacionesBalizasPlano.append(elemento)
 
                 ubicacionesPulserasPlano = list()
                 tipoPulsera = "Manilla"
@@ -144,6 +174,36 @@ class FiltrarGraficaUbicacion(TemplateView):
                     elemento['id'] = i.id
                     elemento['text'] = i.__str__()
                     data.append(elemento)
+            elif action == 'search_area':
+                data = list()
+
+                elemento = dict()
+                elemento['id'] = 0
+                elemento['text'] = "-----------------"
+                data.append(elemento)
+
+                idUbicacion = request.POST['id']
+                piso_selecionado = Piso.objects.get(pk=idUbicacion)
+                listado_areas = Area.objects.filter(piso=piso_selecionado)
+                for are in listado_areas:
+                    elemento = dict()
+                    elemento['id'] = are.id
+                    elemento['text'] = are.area
+                    data.append(elemento)
+            elif action == 'search_sensors':
+                mac_bracelet = request.POST['mac']
+                this_bracelet = Bracelet.objects.get(macDispositivo=mac_bracelet)
+                historialSensores = HistorialBraceletSensors.objects.filter(bracelet=this_bracelet).order_by(
+                    '-fechaRegistro')
+                for hist in historialSensores:
+                    data = dict()
+                    data['ppm'] = hist.ppm_sensor
+                    data['pro'] = hist.proximidad_sensor
+                    data['cai'] = hist.caida_sensor
+                    data['temp'] = hist.temperatura_sensor
+                    data['bat'] = hist.nivel_bateria
+                    data['fec'] = hist.fechaRegistro
+                    break
             else:
                 data['error'] = 'Ha ocurrido un error'
         except Exception as e:
@@ -171,10 +231,10 @@ class ServerReceivedCreateView(FormView):
             data_received = ""
             keys = d.keys()
             for key in keys:
-                #print(key)
+                # print(key)
                 data_received = json.loads(str(key))
 
-            #print(data_received['key'], data_received['string_pack'])
+            # print(data_received['key'], data_received['string_pack'])
             if data_received['key'] == 'ESP32':
                 forms = PackBraceletForm(data_received)
                 if forms.is_valid():
@@ -182,7 +242,7 @@ class ServerReceivedCreateView(FormView):
 
                     # Despues de obtener el dato se decodifica y se convierte en JSON
                     import base64
-                    string_pack = string_pack.replace("*","=")
+                    string_pack = string_pack.replace("*", "=")
                     string_pack = base64.b64decode(string_pack).decode("utf-8")
                     import json
                     string_pack = json.loads(string_pack)
@@ -192,11 +252,13 @@ class ServerReceivedCreateView(FormView):
                     baliza = string_pack['baliza']
 
                     # Se valida que la baliza exista, de lo contrario se envía un correo notificando newBaliza
-                    if ValidarExisteBaliza(baliza, request):
+                    findBaliza, balizaObjectModel = ValidarExisteBaliza(baliza, request)
+                    if findBaliza:
                         # evaluo cada Bracelet (Beacon) por separado
                         for bracelet in listBracelets:
                             # Valido que el Bracelet exista, de lo contrario envio correo notificando newBracelet
-                            if ValidarExisteBracelet(bracelet['MAC'], baliza, request):
+                            findBracelet, braceletObject = ValidarExisteBracelet(bracelet['MAC'], baliza, request)
+                            if findBracelet:
                                 ####################################################################
                                 ####################################################################
                                 ###################                       ##########################
@@ -208,54 +270,81 @@ class ServerReceivedCreateView(FormView):
                                 # print("Procesando datos de los sensores")
 
                                 # leo en la DB el objeto de Bracelet y traigo todos los campos
-                                pulsera = Bracelet.objects.get(macDispositivo=ExtractMac(bracelet['MAC']))
+                                pulsera = braceletObject
+                                balizaNow = balizaObjectModel
 
-                                baliz = ExtractMac(baliza[0])
-
-                                balizaNow = Baliza.objects.get(macDispositivoBaliza=baliz)
-
-                                # Creo un nuevo registro de historial, pero aún no lo guardo
-                                histNew = HistorialBraceletSensors()
-                                histNew.bracelet = pulsera
-                                histNew.baliza = balizaNow
-                                histNew.caida_sensor = bool(int(bracelet['CAI']))
-                                histNew.nivel_bateria = int(bracelet['BAT'])
-                                histNew.proximidad_sensor = bool(int(bracelet['PRO']))
-                                histNew.temperatura_sensor = int(bracelet['TEM'])
-                                histNew.rssi_signal = int(bracelet['RSI'])
-                                histNew.ppm_sensor = int(bracelet['PPM'])
+                                # nuevos datos de sensores recibidos
+                                nivelBateriaRecibido_nuevo = int(bracelet['BAT'])
+                                nivelTemperaturaRecibido_nuevo = int(bracelet['TEM'])
+                                nivelPPMRecibido_nuevo = int(bracelet['PPM'])
 
                                 # Leo el ultimo registro para este Bracelet que se está procesando
-                                hist = HistorialBraceletSensors.objects.filter(bracelet=pulsera).order_by(
-                                    '-fechaRegistro')
+                                hist = BuscarHistorialSensoresParaBracelet(pulsera)
+
                                 registroYaExiste = False
                                 if len(hist) > 0:
+                                    nivelBateriaGuardadoDB = hist[0].nivel_bateria
+                                    nivelTemperaturaGuardadoDB = hist[0].temperatura_sensor
+                                    nivelPPMGuardadoDB = hist[0].ppm_sensor
+
                                     if hist[0].bracelet.macDispositivo == ExtractMac(bracelet['MAC']):
-                                        # Valido que no hayan registros seguidos repetidos
-                                        factorVariacion = 0.05
+                                        # Valido que no hayan registros seguidos repetidos o cercanos
+                                        if nivelBateriaRecibido_nuevo < minimo_nivel_bateria:
+                                            factorVariacionBateria = 0.2
+                                        else:
+                                            factorVariacionBateria = 0.05
+
+                                        if nivelTemperaturaRecibido_nuevo > 37 or nivelTemperaturaRecibido_nuevo < 25:
+                                            factorVariacionTemperatura = 0.05
+                                        else:
+                                            factorVariacionTemperatura = 0.2
+
+                                        if nivelPPMRecibido_nuevo > 120 or nivelPPMRecibido_nuevo < 55:
+                                            factorVariacionPPM = 0.05
+                                        else:
+                                            factorVariacionPPM = 0.2
+
                                         if hist[0].caida_sensor == bool(int(bracelet['CAI'])) \
                                                 and hist[0].proximidad_sensor == bool(int(bracelet['PRO'])) \
-                                                and DeterminarIgualdad_o_cercano(hist[0].nivel_bateria,
-                                                                                 int(bracelet['BAT']), factorVariacion) \
-                                                and DeterminarIgualdad_o_cercano(hist[0].temperatura_sensor,
-                                                                                 int(bracelet['TEM']), factorVariacion) \
-                                                and DeterminarIgualdad_o_cercano(hist[0].ppm_sensor,
-                                                                                 int(bracelet['PPM']), factorVariacion):
+                                                and DeterminarIgualdad_o_cercano(nivelBateriaGuardadoDB,
+                                                                                 nivelBateriaRecibido_nuevo,
+                                                                                 factorVariacionBateria) \
+                                                and DeterminarIgualdad_o_cercano(nivelTemperaturaGuardadoDB,
+                                                                                 nivelTemperaturaRecibido_nuevo,
+                                                                                 factorVariacionTemperatura) \
+                                                and DeterminarIgualdad_o_cercano(nivelPPMGuardadoDB,
+                                                                                 nivelPPMRecibido_nuevo,
+                                                                                 factorVariacionPPM):
                                             registroYaExiste = True
 
-                                if registroYaExiste == False:
+                                if not registroYaExiste:
                                     # Si no existe ningún registro para este bracelet, guardo el registro que se preparó anteriormente
                                     # Si el registro actual no es un registro repetido al anterior, entonces guardo el registro que se preparó anteriormente
+                                    # Creo un nuevo registro de historial y lo guardo
+                                    histNew = HistorialBraceletSensors()
+                                    histNew.bracelet = pulsera
+                                    histNew.baliza = balizaNow
+                                    histNew.caida_sensor = bool(int(bracelet['CAI']))
+                                    histNew.nivel_bateria = int(bracelet['BAT'])
+                                    histNew.proximidad_sensor = bool(int(bracelet['PRO']))
+                                    histNew.temperatura_sensor = int(bracelet['TEM'])
+                                    histNew.rssi_signal = int(bracelet['RSI'])
+                                    histNew.ppm_sensor = int(bracelet['PPM'])
                                     histNew.save()
 
-                                ValidarCaida(baliza, bracelet['MAC'], bool(int(bracelet['CAI'])), request)
-                                ValidadProximidad(baliza, bracelet['MAC'], bool(int(bracelet['PRO'])), request)
-                                ValidarTemperatura(bracelet['MAC'], int(bracelet['TEM']), request)
-                                ValidarPPM(bracelet['MAC'], int(bracelet['PPM']), request)
-                                ValidarNivelBateria(int(bracelet['BAT']), baliza, bracelet['MAC'], request)
+                                macBracelet = str(ExtractMac(bracelet['MAC']))
+                                ValidarCaida(macBracelet, bool(int(bracelet['CAI'])), request)
+                                ValidadProximidad(macBracelet, bool(int(bracelet['PRO'])), request)
+
+                                findUmbrals, braceletUmbralsObject = BuscarUmbralesBraceletDB(pulsera)
+                                if findUmbrals:
+                                    ValidarTemperatura(macBracelet, nivelTemperaturaRecibido_nuevo, braceletUmbralsObject, request)
+                                    ValidarPPM(macBracelet, nivelPPMRecibido_nuevo, braceletUmbralsObject, request)
+                                    ValidarNivelBateria(nivelBateriaRecibido_nuevo, baliza, macBracelet, request)
 
                                 # print("Procesando datos de ubicación")
-                                ProcesarUbicacion(baliza, bracelet['MAC'], bracelet['RSI'])
+                                nivelRssiRecibido_nuevo = int(bracelet['RSI'])
+                                ProcesarUbicacion(balizaNow, pulsera, nivelRssiRecibido_nuevo)
                 else:
                     data['error'] = 'Error en datos, favor intentelo de nuevo'
             else:
