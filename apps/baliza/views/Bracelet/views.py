@@ -71,7 +71,7 @@ class BraceletCreateView(FormView):
                         if bracelet_major > 0 \
                                 and bracelet_minor > 0:
                             if bracelet_tx_power > 0:
-                                if 25 < bracelet_temp_min < 35:
+                                if 20 < bracelet_temp_min < 35:
                                     if 37 < bracelet_temp_max < 45:
                                         if 40 < bracelet_ppm_min < 60:
                                             if 120 < bracelet_ppm_max < 180:

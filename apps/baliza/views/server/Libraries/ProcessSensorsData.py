@@ -7,7 +7,6 @@ from apps.baliza.models import Baliza, RolUsuario, UsuarioRol, Bracelet, Bracele
     InstalacionBaliza, Area, HistorialUbicacion
 from apps.baliza.views.server.Libraries.CalculoUbicacion.Library_BLE_location import CalcularPosicion, BalizaInstalada, \
     Ubicacion
-from apps.baliza.views.server.Libraries.ConsultasBaseDatos.ConsultasBaseDatos import BuscarBalizaDB, BuscarBraceletDB
 from apps.baliza.views.server.Libraries.LibraryRSSItoMts import CalcularDistancia
 from authentication.Config.Constants.Contant import rol_enviar_notificaiones_servidor, time_resend_mail, \
     minimo_nivel_bateria
@@ -113,89 +112,65 @@ def ExtractMac(string):
     return macPulsera_complete
 
 
-def getUmbrales(macPulsera):
-    pulsera = Bracelet.objects.get(macDispositivo=macPulsera)
-    # print("pulsera: ", pulsera)
-    umbrales = BraceletUmbrals.objects.get(bracelet=pulsera)
-    return umbrales
-
-
 # correo completo
 @execute_in_thread(name="hilo ValidarExisteBaliza")
-def ValidarExisteBaliza(baliza, request):
-    baliza = ExtractMac(baliza[0])
-
-    find, balizaObjectModel = BuscarBalizaDB(baliza)
-    if find:
-        return True, balizaObjectModel
-
-    PARAMETROS = config_files['nueva_baliza']
-    diccionarioDatos = dict()
-    diccionarioDatos[PARAMETROS['Var'][0]] = str(baliza)
-    imagenes_en_html = list()
-    imagenes_en_html.append("LOGOFCV.png")
-    imagenes_en_html.append("baliza.jpg")
-    html_message = render_to_string(PARAMETROS['File'],
-                                    diccionarioDatos)
-    html_message = PutImagesHtml(imagenes_en_html, html_message)
-
-    asunto = "Nueva Baliza por registrar (" + baliza + ")"
-
-    listaDestinatarios = getDestinatariosCorreos()
+def NotifyBalizaNotExist(baliza, request, listaDestinatarios):
     if len(listaDestinatarios) > 0:
+        PARAMETROS = config_files['nueva_baliza']
+        diccionarioDatos = dict()
+        diccionarioDatos[PARAMETROS['Var'][0]] = baliza
+        imagenes_en_html = list()
+        imagenes_en_html.append("LOGOFCV.png")
+        imagenes_en_html.append("baliza.jpg")
+        html_message = render_to_string(PARAMETROS['File'],
+                                        diccionarioDatos)
+        html_message = PutImagesHtml(imagenes_en_html, html_message)
+
+        asunto = "Nueva Baliza por registrar (" + baliza + ")"
+
         if not str(baliza) in listadoMacsReportadas:
-            Utilities.sendMail(asunto, html_message, imagenes_en_html,
-                               listaDestinatarios, request)
-            # print("Nueva Baliza encontrada")
-            listadoMacsReportadas.append(str(baliza))
-    return False, None
+            respond = Utilities.sendMail(asunto, html_message, imagenes_en_html, listaDestinatarios, request)
+            if respond:
+                print("Nueva Baliza encontrada: ", baliza)
+                listadoMacsReportadas.append(baliza)
 
 
 # correo completo
 @execute_in_thread(name="hilo ValidarExisteBracelet")
-def ValidarExisteBracelet(bracelet, baliza, request):
-    bracelet = ExtractMac(bracelet)
-
-    find, braceletObject = BuscarBraceletDB(bracelet)
-    if find:
-        return True, braceletObject
-
-    PARAMETROS = config_files['nuevo_bracelet']
-
-    diccionarioDatos = dict()
-    diccionarioDatos[PARAMETROS['Var'][0]] = str(bracelet)
-
-    imagenes_en_html = list()
-    imagenes_en_html.append("LOGOFCV.png")
-    imagenes_en_html.append("manilla.jpg")
-
-    html_message = render_to_string(PARAMETROS['File'],
-                                    diccionarioDatos)
-    html_message = PutImagesHtml(imagenes_en_html, html_message)
-
-    asunto = "Nuevo Bracelet por registrar (" + bracelet + ")"
-    firmaResumenRemitente = "Hospital Smart Bracelet"
-
-    listaDestinatarios = getDestinatariosCorreos()
+def NotifyBraceletNotExist(bracelet, request, listaDestinatarios):
     if len(listaDestinatarios) > 0:
+        PARAMETROS = config_files['nuevo_bracelet']
+
+        diccionarioDatos = dict()
+        diccionarioDatos[PARAMETROS['Var'][0]] = str(bracelet)
+
+        imagenes_en_html = list()
+        imagenes_en_html.append("LOGOFCV.png")
+        imagenes_en_html.append("manilla.jpg")
+
+        html_message = render_to_string(PARAMETROS['File'],
+                                        diccionarioDatos)
+        html_message = PutImagesHtml(imagenes_en_html, html_message)
+
+        asunto = "Nuevo Bracelet por registrar (" + bracelet + ")"
+
         if not str(bracelet) in listadoMacsReportadas:
-            Utilities.sendMail(asunto, html_message, imagenes_en_html,
-                               listaDestinatarios, request)
-            print("Nuevo Bracelet encontrado")
+            respond = Utilities.sendMail(asunto, html_message, imagenes_en_html, listaDestinatarios, request)
+            if respond:
+                print("Nuevo Bracelet encontrado: ", bracelet)
             listadoMacsReportadas.append(str(bracelet))
-    return False, None
 
 
 # correo completo
 @execute_in_thread(name="hilo ValidarCaida")
-def ValidarCaida(macPulsera, caida, request):
-    if caida:
+def NotifyPersonFallen(macPulsera, request, listaCorreosDestinatarios, paciente):
+    if len(listaCorreosDestinatarios) > 0:
         diccionarioDatos = dict()
         imagenes_en_html = list()
 
         PARAMETROS = config_files['alerta_caida']
         diccionarioDatos[PARAMETROS['Var'][0]] = macPulsera
-        diccionarioDatos[PARAMETROS['Var'][1]] = str('<< Paciente >>')
+        diccionarioDatos[PARAMETROS['Var'][1]] = paciente
         imagenes_en_html.append("LOGOFCV.png")
         imagenes_en_html.append("caida.jpg")
 
@@ -205,22 +180,20 @@ def ValidarCaida(macPulsera, caida, request):
 
         asunto = "Alerta, persona caida (" + macPulsera + ")"
 
-        listaCorreosDestinatarios = getDestinatariosCorreos()
-        if len(listaCorreosDestinatarios) > 0:
-            if se_debe_reportar(NAME_SENSOR_CAI, macPulsera):
-                Utilities.sendMail(asunto, html_message, imagenes_en_html,
-                                   listaCorreosDestinatarios, request)
+        if se_debe_reportar(NAME_SENSOR_CAI, macPulsera):
+            Utilities.sendMail(asunto, html_message, imagenes_en_html,
+                               listaCorreosDestinatarios, request)
 
 
 # correo completo
 @execute_in_thread(name="hilo ValidadProximidad")
-def ValidadProximidad(macPulsera, proximidad, request):
-    if not proximidad:
+def NotifyPersonRemovedBracelet(macPulsera, request, listaCorreosDestinatarios, paciente):
+    if len(listaCorreosDestinatarios) > 0:
         diccionarioDatos = dict()
         imagenes_en_html = list()
         PARAMETROS = config_files['alerta_proximidad']
-        diccionarioDatos[PARAMETROS['Var'][0]] = macPulsera
-        diccionarioDatos[PARAMETROS['Var'][1]] = str('<< Paciente >>')
+        diccionarioDatos[PARAMETROS['Var'][0]] = str(macPulsera)
+        diccionarioDatos[PARAMETROS['Var'][1]] = paciente
         imagenes_en_html.append("LOGOFCV.png")
         imagenes_en_html.append("no_signal.png")
 
@@ -230,51 +203,42 @@ def ValidadProximidad(macPulsera, proximidad, request):
 
         asunto = "Alerta, persona se quitó el bracelet (" + macPulsera + ")"
 
-        listaCorreosDestinatarios = getDestinatariosCorreos()
-        if len(listaCorreosDestinatarios) > 0:
-            if se_debe_reportar(NAME_SENSOR_PRO, macPulsera):
-                Utilities.sendMail(asunto, html_message, imagenes_en_html,
-                                   listaCorreosDestinatarios, request)
+        if se_debe_reportar(NAME_SENSOR_PRO, str(macPulsera)):
+            Utilities.sendMail(asunto, html_message, imagenes_en_html,
+                               listaCorreosDestinatarios, request)
 
 
 # correo completo
 @execute_in_thread(name="hilo ValidarTemperatura")
-def ValidarTemperatura(macPulsera, temperaturaActual, umbrales, request):
-    diccionarioDatos = dict()
-    imagenes_en_html = list()
-    PARAMETROS = config_files['alerta_temperatura']
-    diccionarioDatos[PARAMETROS['Var'][0]] = macPulsera
-    diccionarioDatos[PARAMETROS['Var'][1]] = str('<< Paciente >>')
-    imagenes_en_html.append("LOGOFCV.png")
-    imagenes_en_html.append("iconoCaution.jpg")
+def NotifyTemperatureAlert(macPulsera, temperaturaActual, request, umbrales, listaCorreosDestinatarios):
+    if len(listaCorreosDestinatarios) > 0:
+        diccionarioDatos = dict()
+        imagenes_en_html = list()
+        PARAMETROS = config_files['alerta_temperatura']
+        diccionarioDatos[PARAMETROS['Var'][0]] = str(macPulsera)
+        diccionarioDatos[PARAMETROS['Var'][1]] = str('<< Paciente >>')
+        imagenes_en_html.append("LOGOFCV.png")
+        imagenes_en_html.append("iconoCaution.jpg")
 
-    html_message = render_to_string(PARAMETROS['File'],
-                                    diccionarioDatos)
-    html_message = PutImagesHtml(imagenes_en_html, html_message)
+        html_message = render_to_string(PARAMETROS['File'],
+                                        diccionarioDatos)
+        html_message = PutImagesHtml(imagenes_en_html, html_message)
 
-    asunto = None
-    hayAlarma = False
+        temperaturaActual = temperaturaActual / 10
 
-    temperaturaActual = temperaturaActual / 10
+        if temperaturaActual >= umbrales.maximaTemperatura:
+            asunto = "Alerta, persona (" + macPulsera + ")" + " tiene fiebre (" + str(temperaturaActual) + ")"
+        else:
+            asunto = "Alerta, persona (" + macPulsera + ")" + " tiene hipotermia (" + str(temperaturaActual) + ")"
 
-    if temperaturaActual > umbrales.maximaTemperatura:
-        asunto = "Alerta, persona (" + macPulsera + ")" + " con temperatura alta (" + str(temperaturaActual) + ")"
-        hayAlarma = True
-
-    if temperaturaActual < umbrales.minimaTemperatura:
-        asunto = "Alerta, persona (" + macPulsera + ")" + " con temperatura baja (" + str(temperaturaActual) + ")"
-        hayAlarma = True
-
-    listaCorreosDestinatarios = getDestinatariosCorreos()
-    if len(listaCorreosDestinatarios) > 0 and hayAlarma:
         if se_debe_reportar(NAME_SENSOR_TEMP, str(macPulsera)):
             Utilities.sendMail(asunto, html_message, imagenes_en_html,
                                listaCorreosDestinatarios, request)
 
 
 @execute_in_thread(name="hilo ValidarNivelBateria")
-def ValidarNivelBateria(nivelBateria, baliza, macPulsera, request):
-    if nivelBateria < minimo_nivel_bateria:
+def NotifyBateryLevelLow(baliza, macPulsera, request, listaCorreosDestinatarios):
+    if len(listaCorreosDestinatarios) > 0:
         diccionarioDatos = dict()
         diccionarioDatos['ADMIN'] = str('Admin Server')
         diccionarioDatos['BALIZA'] = str(baliza)
@@ -287,40 +251,33 @@ def ValidarNivelBateria(nivelBateria, baliza, macPulsera, request):
         asunto = "Alerta, bracelet (" + macPulsera + ") con bateria baja."
         firmaResumenRemitente = "Hospital Smart Bracelet"
 
-        listaCorreosDestinatarios = getDestinatariosCorreos()
-        if len(listaCorreosDestinatarios) > 0:
-            if se_debe_reportar(NAME_SENSOR_BAT, str(macPulsera)):
-                Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
-                                   listaCorreosDestinatarios, request)
+        if se_debe_reportar(NAME_SENSOR_BAT, str(macPulsera)):
+            Utilities.sendMail(asunto, html_message, firmaResumenRemitente,
+                               listaCorreosDestinatarios, request)
+            print("Bracelet alerta bateria baja")
 
 
 @execute_in_thread(name="hilo ValidarPPM")
-def ValidarPPM(macPulsera, ppmActual, umbrales, request):
-    diccionarioDatos = dict()
-    imagenes_en_html = list()
-    PARAMETROS = config_files['alerta_ppm']
-    diccionarioDatos[PARAMETROS['Var'][0]] = str(macPulsera)
-    diccionarioDatos[PARAMETROS['Var'][1]] = str('<< Paciente >>')
-    imagenes_en_html.append("LOGOFCV.png")
-    imagenes_en_html.append("ppm.jpg")
+def NotifyPpmAlert(macPulsera, ppmActual, request, umbrales, listaCorreosDestinatarios):
+    if len(listaCorreosDestinatarios) > 0:
+        diccionarioDatos = dict()
+        imagenes_en_html = list()
+        PARAMETROS = config_files['alerta_ppm']
+        diccionarioDatos[PARAMETROS['Var'][0]] = str(macPulsera)
+        diccionarioDatos[PARAMETROS['Var'][1]] = str('<< Paciente >>')
+        imagenes_en_html.append("LOGOFCV.png")
+        imagenes_en_html.append("ppm.jpg")
 
-    html_message = render_to_string(PARAMETROS['File'],
-                                    diccionarioDatos)
-    html_message = PutImagesHtml(imagenes_en_html, html_message)
+        html_message = render_to_string(PARAMETROS['File'],
+                                        diccionarioDatos)
+        html_message = PutImagesHtml(imagenes_en_html, html_message)
 
-    asunto = None
-    hayAlarma = False
-    if ppmActual > umbrales.maximaPulsoCardiaco:
-        asunto = "Alerta, persona (" + macPulsera + ")" + " tiene PPM alta (" + str(ppmActual) + ")"
-        hayAlarma = True
+        if ppmActual > umbrales.maximaPulsoCardiaco:
+            asunto = "Alerta, persona (" + macPulsera + ")" + " tiene PPM alta (" + str(ppmActual) + ")"
+        else:
+            asunto = "Alerta, persona (" + macPulsera + ")" + " tiene PPM baja (" + str(ppmActual) + ")"
 
-    if ppmActual < umbrales.minimoPulsoCardiaco:
-        asunto = "Alerta, persona (" + macPulsera + ")" + " tiene PPM baja (" + str(ppmActual) + ")"
-        hayAlarma = True
-
-    listaCorreosDestinatarios = getDestinatariosCorreos()
-    if len(listaCorreosDestinatarios) > 0 and hayAlarma:
-        if se_debe_reportar(NAME_SENSOR_PPM, macPulsera):
+        if se_debe_reportar(NAME_SENSOR_PPM, str(macPulsera)):
             Utilities.sendMail(asunto, html_message, imagenes_en_html,
                                listaCorreosDestinatarios, request)
 
@@ -340,6 +297,7 @@ def DeterminarIgualdad_o_cercano(valorAnterior, valorActual, variacion):
         return False
 
     return True
+
 
 
 def ActualizarAreaPosicion(macPulsera):
@@ -380,28 +338,31 @@ def ActualizarAreaPosicion(macPulsera):
 
 
 @execute_in_thread(name="hilo ProcesarUbicacion")
-def ProcesarUbicacion(balizaNow, pulsera, rssiNow):
-    # measuredPower = pulsera.txPower
-    # distancia = CalcularDistancia(measuredPower, rssi)
+def ProcesarUbicacion(baliza, macPulsera, rssi):
+    macPulsera = ExtractMac(macPulsera)
+    pulsera = Bracelet.objects.get(macDispositivo=macPulsera)
 
-    thereSaveRegister = False
+    measuredPower = pulsera.txPower
+    rssi = int(rssi)
+
+    distancia = CalcularDistancia(measuredPower, rssi)
+
+    macBaliza = ExtractMac(baliza[0])
+
+    balizaNow = Baliza.objects.get(macDispositivoBaliza=macBaliza)
+    histoRssi = HistorialRSSI()
+    histoRssi.baliza = balizaNow
+    histoRssi.bracelet = pulsera
+    histoRssi.rssi_signal = rssi
+
     ultimoRegistro = HistorialRSSI.objects.filter(bracelet=pulsera,
                                                   baliza=balizaNow).order_by('-fechaRegistro')
     if len(ultimoRegistro) > 0:
-        if ultimoRegistro[0].rssi_signal != rssiNow:
-            # //TODO: Guardar unicamente cuando haya una diferencia superior al 5%, de lo contrario no guardar
-            thereSaveRegister = True
+        if ultimoRegistro[0].rssi_signal != rssi:
+            histoRssi.save()
     else:
-        thereSaveRegister = True
-
-    if thereSaveRegister:
-        histoRssi = HistorialRSSI()
-        histoRssi.baliza = balizaNow
-        histoRssi.bracelet = pulsera
-        histoRssi.rssi_signal = rssiNow
         histoRssi.save()
 
-    # //TODO: Revisar que este proceso haga la menor cantidad de consultas a la base de datos
     ActualizarAreaPosicion(pulsera)
 
 

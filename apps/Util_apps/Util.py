@@ -65,49 +65,55 @@ def ChargeImage(url_path):
 def send_mail(asunto, html, firma, correo):
     try:
         msg = MIMEMultipart('related')
-
         msg['Subject'] = asunto
         msg['From'] = EMAIL_HOST_USER
         msg['To'] = correo
-
         part1 = MIMEText(html, 'html')
         msg.attach(part1)
-
-
         if isinstance(firma, list):
-            # print("imagen", firma)
             for path_url in firma:
                 mime_image = ChargeImage(path_url)
                 msg.attach(mime_image)
         else:
-            # print("plano")
             part2 = MIMEText(firma, 'plain')
             msg.attach(part2)
+    except:
+        print("Error preparar datos enviar correo.")
+        return False
 
-        #print("***************************************************** chao mundo *****************************************************")
-
+    try:
         server = smtplib.SMTP('{}: {}'.format(EMAIL_HOST, EMAIL_PORT))
-        #print("***************************************************** conect mundo *****************************************************")
-
         server.starttls()
+    except:
+        print("Servidor de correo no disponible")
+        return False
 
+    try:
         server.login(msg['From'], EMAIL_HOST_PASSWORD)
-        #print("***************************************************** login mundo *****************************************************")
+    except:
+        print("CREDENCIALES NO VALIDAS para enviar correo, por favor comuniquece con el administrador del servidor de correos.")
+        return False
 
+    try:
         server.sendmail(msg['From'], msg['To'], msg.as_string())
         server.quit()
-        # print("***************************************************** {} *****************************************************".format(getFechaHora()))
+        return True
     except NameError:
         print("failed send email to {} - error {}".format(correo, NameError))
+        return False
 
 
-@execute_in_thread(name="Send Mail")
+# @execute_in_thread(name="Send Mail")
 def sendMail(asunto, html, firma, correo, request):
     if type(correo) != list:
         correo = [correo]
 
     for email in correo:
-        send_mail(asunto, html, firma, email)
+        result_send_mail = send_mail(asunto, html, firma, email)
+        if not result_send_mail:
+            return False
+
+    return True
 
     # send_mail(
     #     asunto,
