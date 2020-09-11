@@ -356,6 +356,7 @@ class ServerReceivedCreateView(FormView):
 
                     #             # print("Procesando datos de ubicación")
                     #             ProcesarUbicacion(baliza, bracelet['MAC'], bracelet['RSI'])
+                                CloseOldConectionDB()
                             else:
                                 NotifyBraceletNotExist(macBracelet, request, listaDestinatarios)  # by send mail async: new Bracelet
                     else:
