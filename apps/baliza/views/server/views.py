@@ -14,7 +14,7 @@ from apps.baliza.models import Bracelet, HistorialBraceletSensors, Baliza, Histo
 from apps.baliza.views.server.Libraries.ProcessSensorsData import NotifyBalizaNotExist, ExtractMac, NotifyPersonFallen, \
     NotifyPersonRemovedBracelet, NotifyTemperatureAlert, NotifyPpmAlert, DeterminarIgualdad_o_cercano, \
     NotifyBateryLevelLow, \
-    DeterminarPocisionPulsera, NotifyBraceletNotExist, getDestinatariosCorreos
+    DeterminarPocisionPulsera, NotifyBraceletNotExist, getDestinatariosCorreos, ProcesarUbicacion
 from apps.baliza.views.server.forms import PackBraceletForm, FiltrarGrafica
 from authentication.Config.Constants.Contant import minimo_nivel_bateria
 
@@ -261,77 +261,78 @@ class ServerReceivedCreateView(FormView):
                     CloseOldConectionDB()
                     listaDestinatarios = getDestinatariosCorreos()
 
-                    try:
-                        thisBaliza = Baliza.objects.get(macDispositivoBaliza=baliza)
-                        print(thisBaliza)
-                        findBaliza = True
-                    except:
-                        findBaliza = False
+                    if len(listaDestinatarios) > 0:
+                        try:
+                            thisBaliza = Baliza.objects.get(macDispositivoBaliza=baliza)
+                            print(thisBaliza)
+                            findBaliza = True
+                        except:
+                            findBaliza = False
 
-                    if findBaliza:
-                        listBracelets = dataJson['beacons']
-                        for braceletJson in listBracelets:
-                            macBracelet = ExtractMac(braceletJson['MAC'])
-                            try:
-                                thisBracelet = Bracelet.objects.get(macDispositivo=macBracelet)
-                                print(thisBracelet)
-                                findBracelet = True
-                            except:
-                                findBracelet = False
-
-                            if findBracelet:
+                        if findBaliza:
+                            listBracelets = dataJson['beacons']
+                            for braceletJson in listBracelets:
+                                macBracelet = ExtractMac(braceletJson['MAC'])
                                 try:
-                                    paciente = BraceletPatienHospital.objects.get(bracelet=thisBracelet).idDatosPaciente
+                                    thisBracelet = Bracelet.objects.get(macDispositivo=macBracelet)
+                                    print(thisBracelet)
+                                    findBracelet = True
                                 except:
-                                    paciente = str('<< Paciente >>')
+                                    findBracelet = False
 
-                                try:
-                                    hist = HistorialBraceletSensors.objects.order_by('-fechaRegistro').filter(bracelet=thisBracelet).first()
-                                    if hist is not None:
-                                        new_register_rssi = False
-                                    else:
-                                        new_register_rssi = True
-                                except:
-                                    new_register_rssi = True  # No hay historial, se crea el primer registro para este bracelet
+                                if findBracelet:
+                                    proximity_received_data = bool(int(braceletJson['PRO']))
+                                    batery_received_data = int(braceletJson['BAT'])
+                                    temperature_received_data = int(float(braceletJson['TEM']))
+                                    ppm_received_data = int(braceletJson['PPM'])
+                                    caida_received_data = bool(int(braceletJson['CAI']))
+                                    rssi_received_data = int(braceletJson['RSI'])
 
-                                batery_received_data = int(braceletJson['BAT'])
-                                temperature_received_data = int(braceletJson['TEM'])
-                                ppm_received_data = int(braceletJson['PPM'])
-                                caida_received_data = bool(int(braceletJson['CAI']))
-                                proximity_received_data = bool(int(braceletJson['PRO']))
+                                    try:
+                                        paciente = BraceletPatienHospital.objects.get(bracelet=thisBracelet).idDatosPaciente
+                                    except:
+                                        paciente = str('<< Paciente >>')
 
-                                if not new_register_rssi:
-                                    ValidProximityForReport = hist.proximidad_sensor != proximity_received_data
-                                    if proximity_received_data:
-                                        VariationConstantBatery = 0.05
-                                        VariationConstantPPM = 0.15
-                                        VariationConstantTemperature = 0.10
-                                        ValidBateryForReport = not DeterminarIgualdad_o_cercano(hist.nivel_bateria, batery_received_data, VariationConstantBatery)
-                                        ValidTemperatureForReport = not DeterminarIgualdad_o_cercano(hist.temperatura_sensor, temperature_received_data, VariationConstantTemperature)
-                                        ValidPpmForReport = not DeterminarIgualdad_o_cercano(hist.ppm_sensor, ppm_received_data, VariationConstantPPM)
-                                        ValidDropForReport = hist.caida_sensor != caida_received_data
-                                    else:
-                                        ValidBateryForReport = False
-                                        ValidTemperatureForReport = False
-                                        ValidPpmForReport = False
-                                        ValidDropForReport = False
+                                    try:
+                                        hist = HistorialBraceletSensors.objects.order_by('-fechaRegistro').filter(bracelet=thisBracelet).first()
+                                        if hist is not None:
+                                            new_register_rssi = False
+                                        else:
+                                            new_register_rssi = True
+                                    except:
+                                        new_register_rssi = True  # No hay historial, se crea el primer registro para este bracelet
 
-                                    if ValidBateryForReport or ValidTemperatureForReport or ValidPpmForReport or ValidDropForReport or ValidProximityForReport:
-                                        new_register_rssi = True
+                                    if not new_register_rssi:
+                                        ValidProximityForReport = hist.proximidad_sensor != proximity_received_data
+                                        if proximity_received_data:
+                                            VariationConstantBatery = 0.05
+                                            VariationConstantPPM = 0.15
+                                            VariationConstantTemperature = 0.10
+                                            ValidBateryForReport = not DeterminarIgualdad_o_cercano(hist.nivel_bateria, batery_received_data, VariationConstantBatery)
+                                            ValidTemperatureForReport = not DeterminarIgualdad_o_cercano(hist.temperatura_sensor, temperature_received_data, VariationConstantTemperature)
+                                            ValidPpmForReport = not DeterminarIgualdad_o_cercano(hist.ppm_sensor, ppm_received_data, VariationConstantPPM)
+                                            ValidDropForReport = hist.caida_sensor != caida_received_data
+                                        else:
+                                            ValidBateryForReport = False
+                                            ValidTemperatureForReport = False
+                                            ValidPpmForReport = False
+                                            ValidDropForReport = False
 
-                                if new_register_rssi:
-                                    histNew = HistorialBraceletSensors()
-                                    histNew.bracelet = thisBracelet
-                                    histNew.baliza = thisBaliza
-                                    histNew.caida_sensor = bool(int(braceletJson['CAI']))
-                                    histNew.nivel_bateria = int(braceletJson['BAT'])
-                                    histNew.proximidad_sensor = bool(int(braceletJson['PRO']))
-                                    histNew.temperatura_sensor = int(braceletJson['TEM'])
-                                    histNew.rssi_signal = int(braceletJson['RSI'])
-                                    histNew.ppm_sensor = int(braceletJson['PPM'])
-                                    histNew.save()
+                                        if ValidBateryForReport or ValidTemperatureForReport or ValidPpmForReport or ValidDropForReport or ValidProximityForReport:
+                                            new_register_rssi = True
 
-                                if len(listaDestinatarios) > 0:
+                                    if new_register_rssi:
+                                        histNew = HistorialBraceletSensors()
+                                        histNew.bracelet = thisBracelet
+                                        histNew.baliza = thisBaliza
+                                        histNew.caida_sensor = caida_received_data
+                                        histNew.nivel_bateria = batery_received_data
+                                        histNew.proximidad_sensor = proximity_received_data
+                                        histNew.temperatura_sensor = temperature_received_data
+                                        histNew.rssi_signal = rssi_received_data
+                                        histNew.ppm_sensor = ppm_received_data
+                                        histNew.save()
+
                                     if not proximity_received_data:
                                         NotifyPersonRemovedBracelet(macBracelet, request, listaDestinatarios, paciente)
                                     else:
@@ -354,13 +355,16 @@ class ServerReceivedCreateView(FormView):
                                             if (ppm_received_data >= umbrals.maximaPulsoCardiaco) or (ppm_received_data <= umbrals.minimoPulsoCardiaco):
                                                 NotifyPpmAlert(macBracelet, ppm_received_data, request, umbrals, listaDestinatarios)
 
-                    #             # print("Procesando datos de ubicación")
-                    #             ProcesarUbicacion(baliza, bracelet['MAC'], bracelet['RSI'])
-                                CloseOldConectionDB()
-                            else:
-                                NotifyBraceletNotExist(macBracelet, request, listaDestinatarios)  # by send mail async: new Bracelet
+                                    # print("Procesando datos de ubicación")
+                                    ProcesarUbicacion(thisBaliza, thisBracelet, rssi_received_data)
+                                else:
+                                    NotifyBraceletNotExist(macBracelet, request, listaDestinatarios)  # by send mail async: new Bracelet
+                        else:
+                            NotifyBalizaNotExist(baliza, request, listaDestinatarios)  # by send mail async: new Baliza
                     else:
-                        NotifyBalizaNotExist(baliza, request, listaDestinatarios)  # by send mail async: new Baliza
+                        print()
+                        print("No hay usuario para destinar los correos de notificación, por favor registre un usuario.")
+                        print()
                 else:
                     data['error'] = 'Error en datos, favor intentelo de nuevo'
             else:

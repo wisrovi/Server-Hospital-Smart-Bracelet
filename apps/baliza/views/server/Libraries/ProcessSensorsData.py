@@ -299,13 +299,12 @@ def DeterminarIgualdad_o_cercano(valorAnterior, valorActual, variacion):
     return True
 
 
-
-def ActualizarAreaPosicion(macPulsera):
-    CartesianoFinal, idsBalizasUsadas, pisoDeseado = DeterminarPocisionPulsera(macPulsera)
+def ActualizarAreaPosicion(pulsera):
+    CartesianoFinal, idsBalizasUsadas, pisoDeseado = DeterminarPocisionPulsera(pulsera)
 
     if pisoDeseado is not None:
         todas_areas_este_piso = Area.objects.filter(piso=pisoDeseado)
-        historial_esta_pulsera = HistorialUbicacion.objects.filter(bracelet=macPulsera).order_by(
+        historial_esta_pulsera = HistorialUbicacion.objects.filter(bracelet=pulsera).order_by(
             '-fechaIngresoArea')
 
         # print(CartesianoFinal, todas_areas_este_piso)
@@ -314,11 +313,14 @@ def ActualizarAreaPosicion(macPulsera):
             xf = float(are.xFinal)
             yi = float(are.yInicial)
             yf = float(are.yFinal)
-            if xi < CartesianoFinal[0] < xf and yi < CartesianoFinal[1] < yf:
+
+            xc = CartesianoFinal[0]
+            yc = CartesianoFinal[1]
+            if xi < xc < xf and yi < yc < yf:
                 if len(historial_esta_pulsera) == 0:
                     histo = HistorialUbicacion()
                     histo.area = are
-                    histo.bracelet = macPulsera
+                    histo.bracelet = pulsera
                     histo.save()
                 else:
                     for register in historial_esta_pulsera:
@@ -329,7 +331,7 @@ def ActualizarAreaPosicion(macPulsera):
                                 # print("la persona cambio de area")
                                 histo = HistorialUbicacion()
                                 histo.area = are
-                                histo.bracelet = macPulsera
+                                histo.bracelet = pulsera
                                 histo.save()
                                 # print("Creando nuevo registro")
                             else:
@@ -338,29 +340,22 @@ def ActualizarAreaPosicion(macPulsera):
 
 
 @execute_in_thread(name="hilo ProcesarUbicacion")
-def ProcesarUbicacion(baliza, macPulsera, rssi):
-    macPulsera = ExtractMac(macPulsera)
-    pulsera = Bracelet.objects.get(macDispositivo=macPulsera)
+def ProcesarUbicacion(balizaNow, pulsera, rssi):
+    ultimoRegistro = HistorialRSSI.objects.order_by('-fechaRegistro').filter(bracelet=pulsera, baliza=balizaNow).first()
 
-    measuredPower = pulsera.txPower
-    rssi = int(rssi)
-
-    distancia = CalcularDistancia(measuredPower, rssi)
-
-    macBaliza = ExtractMac(baliza[0])
-
-    balizaNow = Baliza.objects.get(macDispositivoBaliza=macBaliza)
-    histoRssi = HistorialRSSI()
-    histoRssi.baliza = balizaNow
-    histoRssi.bracelet = pulsera
-    histoRssi.rssi_signal = rssi
-
-    ultimoRegistro = HistorialRSSI.objects.filter(bracelet=pulsera,
-                                                  baliza=balizaNow).order_by('-fechaRegistro')
-    if len(ultimoRegistro) > 0:
-        if ultimoRegistro[0].rssi_signal != rssi:
-            histoRssi.save()
+    if ultimoRegistro is not None:
+        if ultimoRegistro.rssi_signal != rssi:
+            debe_insertar_nuevo_registro = True
+        else:
+            debe_insertar_nuevo_registro = False
     else:
+        debe_insertar_nuevo_registro = True
+
+    if debe_insertar_nuevo_registro:
+        histoRssi = HistorialRSSI()
+        histoRssi.baliza = balizaNow
+        histoRssi.bracelet = pulsera
+        histoRssi.rssi_signal = rssi
         histoRssi.save()
 
     ActualizarAreaPosicion(pulsera)
@@ -368,65 +363,154 @@ def ProcesarUbicacion(baliza, macPulsera, rssi):
 
 # @count_elapsed_time
 def DeterminarPocisionPulsera(pulsera, pisoDeseado=None):
+    print("Hallando ubicación Baliza")
     ConstanteSegundosMaximosSeparacionRegistros = 15
 
     listadoBalizas = list()
 
     lastDate = None
-    datosEstaPulsera = HistorialRSSI.objects.filter(bracelet=pulsera).order_by('-fechaRegistro')
+    datosEstaPulsera = HistorialRSSI.objects.order_by('-fechaRegistro').filter(bracelet=pulsera)
+
+    UltimosDatosRegistradosPorCadaBaliza = list()
     macBalizasProcesadas = list()
-    piso_detectado = None
-    if len(datosEstaPulsera) > 0:
-        for dato in datosEstaPulsera:
-            if lastDate is None:
-                lastDate = dato.fechaRegistro
-            else:
-                diferencia = lastDate - dato.fechaRegistro
-                diferencia = diferencia.seconds
-                if diferencia < ConstanteSegundosMaximosSeparacionRegistros:
-                    baliza = dato.baliza
-                    if not baliza.macDispositivoBaliza in macBalizasProcesadas:
-                        macBalizasProcesadas.append(baliza.macDispositivoBaliza)
+    for dato in datosEstaPulsera:
+        thisBaliza = dato.baliza
+        macBaliza = thisBaliza.macDispositivoBaliza
+        if not macBaliza in macBalizasProcesadas:
+            macBalizasProcesadas.append(macBaliza)
+            datosInstalacionBaliza = InstalacionBaliza.objects.get(baliza=thisBaliza)
 
-                        datosInstalacionBaliza = InstalacionBaliza.objects.get(baliza=baliza)
-                        pisoInstalacion = datosInstalacionBaliza.piso
+            datosProcesar = dict()
+            datosProcesar['BALIZA'] = thisBaliza
+            datosProcesar['INSTALATION'] = datosInstalacionBaliza
+            datosProcesar['DATE'] = dato.fechaRegistro
+            datosProcesar['RSSI'] = dato.rssi_signal
 
-                        puntoInstalacion = (datosInstalacionBaliza.instalacionX, datosInstalacionBaliza.instalacionY)
-                        # print(pulsera.descripcion, "--->", puntoInstalacion, "--->",
-                        #        CalcularDistancia(pulsera.txPower, dato.rssi_signal), "mt", pisoInstalacion)
+            UltimosDatosRegistradosPorCadaBaliza.append(datosProcesar)
 
-                        if pisoDeseado is not None:
-                            puntoInstalacionBaliza = InstalacionBaliza.objects.filter(baliza=baliza)
-                            for puntito in puntoInstalacionBaliza:
-                                pisitoPuntito = puntito.piso
-                                puntitoDeseado = pisoDeseado[0]
-                                if pisitoPuntito == puntitoDeseado:
-                                    listadoBalizas.append(
-                                        BalizaInstalada(
-                                            ubi=Ubicacion(
-                                                x=datosInstalacionBaliza.instalacionX,
-                                                y=datosInstalacionBaliza.instalacionY),
-                                            nombre=baliza.macDispositivoBaliza,
-                                            dist=CalcularDistancia(pulsera.txPower, dato.rssi_signal))
-                                    )
+    if len(UltimosDatosRegistradosPorCadaBaliza) > 0:
+        if len(UltimosDatosRegistradosPorCadaBaliza) >= 3:
+            # print("Balizas a usar, pero primero validar que tengan la separación en tiempo minima requerida")
+            # la primera fecha determina el ultimo registro, los demas no deben estar
+            primera_fecha = None
+            RegistrosValidosParaProcesarUbicacion = list()
+            for registro in UltimosDatosRegistradosPorCadaBaliza:
+                baliza_registrada = registro['BALIZA']
+                fecha = registro['DATE']
+                instalacion = registro['INSTALATION']
+                rssi = registro['RSSI']
+
+                datosProcesar = dict()
+                datosProcesar['BALIZA'] = baliza_registrada
+                datosProcesar['INSTALATION'] = instalacion
+                datosProcesar['DATE'] = fecha
+                datosProcesar['RSSI'] = rssi
+
+                if primera_fecha is None:
+                    primera_fecha = fecha
+                    RegistrosValidosParaProcesarUbicacion.append(datosProcesar)
+                else:
+                    diferencia = primera_fecha - fecha
+                    if diferencia.seconds <= ConstanteSegundosMaximosSeparacionRegistros:
+                        RegistrosValidosParaProcesarUbicacion.append(datosProcesar)
+            if len(RegistrosValidosParaProcesarUbicacion) >= 3:
+                for registro in RegistrosValidosParaProcesarUbicacion:
+                    baliza_registrada = registro['BALIZA']
+                    instalacion = registro['INSTALATION']
+                    rssi = registro['RSSI']
+
+                    if pisoDeseado is None:
+                        guardar = True
+                        pisoDeseado = instalacion.piso
+                    else:
+                        if pisoDeseado == instalacion.piso:
+                            guardar = True
                         else:
-                            if piso_detectado is None or piso_detectado == pisoInstalacion:
-                                piso_detectado = pisoInstalacion
-                                listadoBalizas.append(
-                                    BalizaInstalada(
-                                        ubi=Ubicacion(
-                                            x=datosInstalacionBaliza.instalacionX,
-                                            y=datosInstalacionBaliza.instalacionY),
-                                        nombre=baliza.macDispositivoBaliza,
-                                        dist=CalcularDistancia(pulsera.txPower, dato.rssi_signal))
-                                )
+                            guardar = False
 
-        if len(listadoBalizas) >= 3:
-            CartesianoFinal, idsBalizasUsadas = CalcularPosicion(listadoBalizas)
-            if pisoDeseado is None:
-                pisoDeseado = piso_detectado
-            return CartesianoFinal, idsBalizasUsadas, pisoDeseado
+                    if guardar:
+                        listadoBalizas.append(
+                            BalizaInstalada(
+                                ubi=Ubicacion(
+                                    x=instalacion.instalacionX,
+                                    y=instalacion.instalacionY),
+                                nombre=baliza_registrada.macDispositivoBaliza,
+                                dist=CalcularDistancia(pulsera.txPower, rssi))
+                        )
+                if len(listadoBalizas) >= 3:
+                    print("hallando posición")
+                    # print(listadoBalizas)
+
+                    CartesianoFinal, idsBalizasUsadas = CalcularPosicion(listadoBalizas)
+                    return CartesianoFinal, idsBalizasUsadas, pisoDeseado
+                else:
+                    print("Hay datos de balizas que registran ver la pulsera, pero estas no corresponden al mismo piso, esto es un caso exepcional")
+            else:
+                print("No hay suficientes registros validos para procesar ubicacion")
         else:
-            # print(len(listadoBalizas))
-            pass
+            print("No hay suficientes ubicaciones para hallar la posición de la pulsera")
+        print()
+    # print(UltimosDatosRegistradosPorCadaBaliza)
+
+
+    #
+    # piso_detectado = None
+    # if len(datosEstaPulsera) > 0:
+    #     for dato in datosEstaPulsera:
+    #         if lastDate is None:
+    #             lastDate = dato.fechaRegistro
+    #         else:
+    #             diferencia = lastDate - dato.fechaRegistro
+    #             diferencia = diferencia.seconds
+    #             if diferencia < ConstanteSegundosMaximosSeparacionRegistros:
+    #                 baliza = dato.baliza
+    #                 if not baliza.macDispositivoBaliza in macBalizasProcesadas:
+    #                     macBalizasProcesadas.append(baliza.macDispositivoBaliza)
+    #
+    #                     try:
+    #                         datosInstalacionBaliza = InstalacionBaliza.objects.get(baliza=baliza)
+    #                     except ValueError:
+    #                         print(ValueError)
+    #                         return None, None, None
+    #
+    #                     pisoInstalacion = datosInstalacionBaliza.piso
+    #
+    #                     puntoInstalacion = (datosInstalacionBaliza.instalacionX, datosInstalacionBaliza.instalacionY)
+    #                     # print(pulsera.descripcion, "--->", puntoInstalacion, "--->",
+    #                     #        CalcularDistancia(pulsera.txPower, dato.rssi_signal), "mt", pisoInstalacion)
+    #
+    #                     if pisoDeseado is not None:
+    #                         puntoInstalacionBaliza = InstalacionBaliza.objects.filter(baliza=baliza)
+    #                         for puntito in puntoInstalacionBaliza:
+    #                             pisitoPuntito = puntito.piso
+    #                             puntitoDeseado = pisoDeseado[0]
+    #                             if pisitoPuntito == puntitoDeseado:
+    #                                 listadoBalizas.append(
+    #                                     BalizaInstalada(
+    #                                         ubi=Ubicacion(
+    #                                             x=datosInstalacionBaliza.instalacionX,
+    #                                             y=datosInstalacionBaliza.instalacionY),
+    #                                         nombre=baliza.macDispositivoBaliza,
+    #                                         dist=CalcularDistancia(pulsera.txPower, dato.rssi_signal))
+    #                                 )
+    #                     else:
+    #                         if piso_detectado is None or piso_detectado == pisoInstalacion:
+    #                             piso_detectado = pisoInstalacion
+    #                             listadoBalizas.append(
+    #                                 BalizaInstalada(
+    #                                     ubi=Ubicacion(
+    #                                         x=datosInstalacionBaliza.instalacionX,
+    #                                         y=datosInstalacionBaliza.instalacionY),
+    #                                     nombre=baliza.macDispositivoBaliza,
+    #                                     dist=CalcularDistancia(pulsera.txPower, dato.rssi_signal))
+    #                             )
+    #
+    #     if len(listadoBalizas) >= 3:
+    #         CartesianoFinal, idsBalizasUsadas = CalcularPosicion(listadoBalizas)
+    #         if pisoDeseado is None:
+    #             pisoDeseado = piso_detectado
+    #         return CartesianoFinal, idsBalizasUsadas, pisoDeseado
+    #     else:
+    #         # print(len(listadoBalizas))
+    #         pass
     return None, None, None
