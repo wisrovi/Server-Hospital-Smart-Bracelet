@@ -19,6 +19,14 @@ from apps.baliza.views.server.forms import PackBraceletForm, FiltrarGrafica
 from authentication.Config.Constants.Contant import minimo_nivel_bateria
 
 
+
+UbicacionesTodasPulseras = dict()
+class UbicacionPulsera:
+    idBracelet = int()
+    cartesiano = tuple()
+    idPiso = int()
+
+
 class DatoGraficaBubble:
     name = None
     x = None
@@ -131,70 +139,117 @@ class FiltrarGraficaUbicacion(TemplateView):
             if action == 'graph_ubicacion':
                 id = request.POST['id']
                 area_seleccionada = request.POST['area']
-                piso = Piso.objects.filter(pk=id)
 
-                if area_seleccionada != "":
-                    area_seleccionada = Area.objects.get(pk=area_seleccionada)
-                    area_seleccionada = (
-                        area_seleccionada.xInicial,
-                        area_seleccionada.yInicial,
-                        area_seleccionada.xFinal,
-                        area_seleccionada.yFinal
-                    )
+                balizasByArea = ReadBalizasByArea(id)
+                balizasMostrar = list()
+                if area_seleccionada == "":
+                    balizasMostrar = balizasByArea
+                else:
+                    area_seleccionada = int(area_seleccionada)
+                    for reg in balizasByArea:
+                        if reg['idArea'] == area_seleccionada:
+                            balizasMostrar.append(reg)
 
                 ubicacionesBalizasPlano = list()
-                tipoBaliza = "Baliza"
-                todasLasBalizas = Baliza.objects.all()
-                for baliza in todasLasBalizas:
-                    instalacion = InstalacionBaliza.objects.filter(baliza=baliza)
-                    for instal in instalacion:
-                        pis = instal.piso
-                        if pis == piso[0]:
-                            elemento = list()
-                            coordenadas = (instalacion[0].instalacionX, instalacion[0].instalacionY)
-                            if area_seleccionada != "":
-                                # print("Area en: ({}, {}) -> ({}, {})".format(
-                                #     area_seleccionada[0],
-                                #     area_seleccionada[1],
-                                #     area_seleccionada[2],
-                                #     area_seleccionada[3]
-                                # ))
-                                # print(coordenadas[0], coordenadas[1])
-                                if area_seleccionada[0] < coordenadas[0] < area_seleccionada[2] and \
-                                        area_seleccionada[1] < coordenadas[1] < area_seleccionada[3]:
-                                    elemento.append(baliza.macDispositivoBaliza)
-                                    elemento.append(coordenadas[0])
-                                    elemento.append(coordenadas[1])
-                                    elemento.append(tipoBaliza)
-                                    # print("registro OK")
-                                    ubicacionesBalizasPlano.append(elemento)
-                            else:
-                                elemento.append(baliza.macDispositivoBaliza)
-                                elemento.append(coordenadas[0])
-                                elemento.append(coordenadas[1])
-                                elemento.append(tipoBaliza)
-                                ubicacionesBalizasPlano.append(elemento)
+                for reg in balizasMostrar:
+                    elemento = list()
+                    elemento.append(reg['macBaliza'])
+                    elemento.append(reg['xInstall'])
+                    elemento.append(reg['yInstall'])
+                    elemento.append("Baliza")
+                    ubicacionesBalizasPlano.append(elemento)
+
+                # tipoBaliza = "Baliza"
+                # piso = Piso.objects.filter(pk=id)
+                #
+                # if area_seleccionada != "":
+                #     area_seleccionada = Area.objects.get(pk=area_seleccionada)
+                #     area_seleccionada = (
+                #         area_seleccionada.xInicial,
+                #         area_seleccionada.yInicial,
+                #         area_seleccionada.xFinal,
+                #         area_seleccionada.yFinal
+                #     )
+                #
+                # todasLasBalizas = Baliza.objects.all()
+                # for baliza in todasLasBalizas:
+                #     instalacion = InstalacionBaliza.objects.filter(baliza=baliza)
+                #     for instal in instalacion:
+                #         pis = instal.piso
+                #         if pis == piso[0]:
+                #             elemento = list()
+                #             coordenadas = (instalacion[0].instalacionX, instalacion[0].instalacionY)
+                #             if area_seleccionada != "":
+                #                 # print("Area en: ({}, {}) -> ({}, {})".format(
+                #                 #     area_seleccionada[0],
+                #                 #     area_seleccionada[1],
+                #                 #     area_seleccionada[2],
+                #                 #     area_seleccionada[3]
+                #                 # ))
+                #                 # print(coordenadas[0], coordenadas[1])
+                #                 if area_seleccionada[0] < coordenadas[0] < area_seleccionada[2] and \
+                #                         area_seleccionada[1] < coordenadas[1] < area_seleccionada[3]:
+                #                     elemento.append(baliza.macDispositivoBaliza)
+                #                     elemento.append(coordenadas[0])
+                #                     elemento.append(coordenadas[1])
+                #                     elemento.append(tipoBaliza)
+                #                     # print("registro OK")
+                #                     ubicacionesBalizasPlano.append(elemento)
+                #             else:
+                #                 elemento.append(baliza.macDispositivoBaliza)
+                #                 elemento.append(coordenadas[0])
+                #                 elemento.append(coordenadas[1])
+                #                 elemento.append(tipoBaliza)
+                #                 ubicacionesBalizasPlano.append(elemento)
+
+                braceletsByArea = ReadBraceletByArea(id)
+                braceletsMostrar = list()
+                if area_seleccionada == "":
+                    braceletsMostrar = braceletsByArea
+                else:
+                    for reg in braceletsByArea:
+                        if reg['area_id'] == area_seleccionada:
+                            braceletsMostrar.append(reg)
 
                 ubicacionesPulserasPlano = list()
-                tipoPulsera = "Manilla"
-                todasLasPulseras = Bracelet.objects.all()
-                for pulsera in todasLasPulseras:
-                    CartesianoFinal, idsBalizasUsadas, pisoDeseado = DeterminarPocisionPulsera(pulsera.id,
-                                                                                               pisoDeseado=piso)
-                    if CartesianoFinal is not None:
-                        constantePresicion = 6
-                        # print("El valor estimado de ubicación (x,y) es", CartesianoFinal[0], CartesianoFinal[1], "+-",
-                        #       constantePresicion)
-                        elemento = list()
-                        elemento.append(pulsera.macDispositivo)
-                        elemento.append(CartesianoFinal[0])
-                        elemento.append(CartesianoFinal[1])
-                        elemento.append(tipoPulsera)
-                        ubicacionesPulserasPlano.append(elemento)
+                for reg in braceletsMostrar:
+                    tieneRegistroEstaPulsera = False
+                    keyBuscar = str(reg['bracelet_id'])
+                    for key in UbicacionesTodasPulseras:
+                        if keyBuscar == key:
+                            tieneRegistroEstaPulsera = True
+                    if tieneRegistroEstaPulsera:
+                        ubicacionEstaPulsera = UbicacionesTodasPulseras[keyBuscar]
+                        try:
+                            elemento = list()
+                            elemento.append(reg['macDispositivo'])
+                            elemento.append(int(ubicacionEstaPulsera['cartesiano'][0]))
+                            elemento.append(int(ubicacionEstaPulsera['cartesiano'][1]))
+                            elemento.append("Manilla")
+                            ubicacionesPulserasPlano.append(elemento)
+                        except:
+                            pass
+
+
+                # tipoPulsera = "Manilla"
+                # todasLasPulseras = Bracelet.objects.all()
+                # for pulsera in todasLasPulseras:
+                #     CartesianoFinal, idsBalizasUsadas, pisoDeseado = DeterminarPocisionPulsera(pulsera.id,
+                #                                                                                pisoDeseado=piso)
+                #     if CartesianoFinal is not None:
+                #         constantePresicion = 6
+                #         # print("El valor estimado de ubicación (x,y) es", CartesianoFinal[0], CartesianoFinal[1], "+-",
+                #         #       constantePresicion)
+                #         elemento = list()
+                #         elemento.append(pulsera.macDispositivo)
+                #         elemento.append(CartesianoFinal[0])
+                #         elemento.append(CartesianoFinal[1])
+                #         elemento.append(tipoPulsera)
+                #         ubicacionesPulserasPlano.append(elemento)
 
                 data['todasBalizas'] = ubicacionesBalizasPlano
                 data['todasPulseras'] = ubicacionesPulserasPlano
-                data['idPiso'] = piso[0].id
+                data['idPiso'] = id
             elif action == 'search_ubicacion':
                 data = list()
                 elemento = dict()
@@ -274,7 +329,7 @@ class ServerReceivedCreateView(FormView):
                         findBaliza = False
                         try:
                             thisBaliza = ReadDataBalizaByMac(baliza)[0]  # Baliza.objects.get(macDispositivoBaliza=baliza)
-                            # print("baliza: ", thisBaliza)
+                            print("baliza: ", thisBaliza['descripcion'], thisBaliza['mac'])
                             if len(thisBaliza) > 0:
                                 findBaliza = True
                         except:
@@ -390,7 +445,13 @@ class ServerReceivedCreateView(FormView):
                                                                listaDestinatarios)
 
                                     # print("Procesando datos de ubicación")
-                                    ProcesarUbicacion(thisBaliza, thisBracelet, rssi_received_data)
+                                    CartesianoFinal, pisoDeseado = ProcesarUbicacion(thisBaliza, thisBracelet, rssi_received_data)
+                                    if CartesianoFinal is not None and pisoDeseado is not None:
+                                        ubiPulsera = UbicacionPulsera()
+                                        ubiPulsera.idPiso = pisoDeseado
+                                        ubiPulsera.cartesiano = CartesianoFinal
+                                        ubiPulsera.idBracelet = thisBracelet['id']
+                                        UbicacionesTodasPulseras[str(thisBracelet['id'])] = ubiPulsera.__dict__
 
                                     # CerrarConexionDB() #no hace falta
                                 else:

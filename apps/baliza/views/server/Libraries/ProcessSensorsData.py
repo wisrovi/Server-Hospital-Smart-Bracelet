@@ -328,6 +328,8 @@ def ActualizarAreaPosicion(pulsera):
                     InsertarNuevoRegistroHistorialUbicacion(reg['id'], pulsera['id'])
                 break
 
+    return CartesianoFinal, pisoDeseado
+
     # if pisoDeseado is not None and False:
     #     todas_areas_este_piso = Area.objects.filter(piso=pisoDeseado)
     #     historial_esta_pulsera = HistorialUbicacion.objects.filter(bracelet=pulsera).order_by(
@@ -386,7 +388,8 @@ def ProcesarUbicacion(balizaNow, pulsera, rssi):
         # histoRssi.rssi_signal = rssi
         # histoRssi.save()
 
-    ActualizarAreaPosicion(pulsera)
+    CartesianoFinal, pisoDeseado = ActualizarAreaPosicion(pulsera)
+    return CartesianoFinal, pisoDeseado
     # print("+++++++++++++++++++++++++++++++++++++++++++++++++")
 
 

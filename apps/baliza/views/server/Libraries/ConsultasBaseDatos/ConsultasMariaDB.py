@@ -162,12 +162,34 @@ def ReadDataBalizaByMac(macBaliza):
     for i in ALL_RESPONSE:
         data_db = DataBaliza()
         data_db.id = i[0]
-        data_db.descripcion = i[1]
-        data_db.mac = i[2]
+        data_db.mac = i[1]
+        data_db.descripcion = i[2]
         data_db.indHabilitado = i[3]
         response.append(data_db.__dict__)
 
     return response
+
+def ReadBraceletByArea(idPiso:int):
+    class DataBaliza:
+        bracelet_id = int()
+        area_id = int()
+        piso_id = int()
+        macDispositivo = str()
+
+    comando = COMANDO_ReadBraceletByArea.replace('@idPiso', idPiso)
+    ALL_RESPONSE = ConsultarMariaDB(comando)
+
+    response = list()
+    for i in ALL_RESPONSE:
+        data_db = DataBaliza()
+        data_db.bracelet_id = i[0]
+        data_db.area_id = i[1]
+        data_db.piso_id = i[2]
+        data_db.macDispositivo = i[3]
+        response.append(data_db.__dict__)
+
+    return response
+
 
 
 def ReadDataBraceletByMac(macBracelet):
@@ -227,6 +249,34 @@ def ReadLastRegisterSensors(idBracelet: int):
         data_db.proximidad_sensor = i[2]
         data_db.tempertura_sensor = i[3]
         data_db.nivel_bateria = i[4]
+        response.append(data_db.__dict__)
+
+    return response
+
+
+def ReadBalizasByArea(idPiso:int):
+    class DataBaliza:
+        idPiso = int()
+        idArea = int()
+        idBaliza = int()
+        descripcion = str()
+        macBaliza = str()
+        xInstall = int()
+        yInstall = int()
+
+    comando = COMANDO_ReadBalizasByArea.replace('@idPiso', idPiso)
+    ALL_RESPONSE = ConsultarMariaDB(comando)
+
+    response = list()
+    for i in ALL_RESPONSE:
+        data_db = DataBaliza()
+        data_db.idPiso = i[0]
+        data_db.idArea = i[1]
+        data_db.idBaliza = i[2]
+        data_db.descripcion = i[3]
+        data_db.macBaliza = i[4]
+        data_db.xInstall = i[5]
+        data_db.yInstall = i[6]
         response.append(data_db.__dict__)
 
     return response

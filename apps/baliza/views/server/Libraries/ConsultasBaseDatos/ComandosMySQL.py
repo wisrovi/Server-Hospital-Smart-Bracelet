@@ -1,5 +1,4 @@
 
-
 ## READ
 
 COMANDO_ReadLastRegisterByCalculateUbication = """
@@ -45,12 +44,10 @@ D.sede_id, C.piso_id, C.instalacionX, C.instalacionY
     ORDER BY A.bracelet_id,A.baliza_id, A.fechaRegistro DESC;
     """
 
-
 COMANDO_ReadAreasPorPiso = """
 SELECT id, area, xInicial, xFinal, yInicial, yFinal FROM baliza_area
 WHERE piso_id = @idPiso;
 """
-
 
 COMANDO_ReadIsInArea = """
 SELECT A.id, A.bracelet_id, A.area_id, A.fechaSalidaArea
@@ -62,7 +59,6 @@ ON A.area_id = B.id
 WHERE A.bracelet_id = @idBracelet
 ORDER BY id DESC LIMIT 1;
 """
-
 
 COMANDO_EmailsDestinatariosAlertas = """
 SELECT atu.email FROM baliza_rolusuario bru
@@ -104,6 +100,40 @@ ORDER BY id DESC
 LIMIT 1;
 """
 
+COMANDO_ReadBalizasByArea = """
+SELECT A.piso_id AS idPiso, A.id AS idArea,  /*A.xInicial, A.xFinal, A.yInicial, A.yFinal,*/
+B.id AS idBaliza, B.descripcion, B.macDispositivoBaliza, B.instalacionX, B.instalacionY
+
+FROM baliza_area A
+INNER JOIN (
+	SELECT BB.id, BB.macDispositivoBaliza, BB.descripcion, 
+	AA.instalacionX, AA.instalacionY, AA.piso_id
+	FROM baliza_instalacionbaliza AA
+	INNER JOIN baliza_baliza BB
+	ON BB.id = AA.baliza_id
+	WHERE AA.piso_id = @idPiso ) B
+ON B.piso_id = A.piso_id
+
+WHERE 
+B.instalacionX > A.xInicial
+AND B.instalacionX > A.xInicial 
+AND B.instalacionY > A.yInicial
+AND B.instalacionX < A.yFinal
+AND A.piso_id = @idPiso
+;
+"""
+
+COMANDO_ReadBraceletByArea = """
+SELECT A.bracelet_id, A.area_id, B.piso_id, C.macDispositivo
+FROM baliza_historialubicacion A
+INNER JOIN baliza_area B
+ON B.id = A.area_id
+INNER JOIN baliza_bracelet C
+ON C.id = A.bracelet_id
+WHERE A.fechaSalidaArea IS NULL
+AND B.piso_id = @idPiso
+GROUP BY A.bracelet_id;
+"""
 
 ## INSERT
 
@@ -126,7 +156,6 @@ NOW(),
 COMANDO_InsertarNuevoRegistroSRRI = """
 INSERT INTO baliza_historialrssi (rssi_signal, fechaRegistro, baliza_id, bracelet_id) VALUES (@rssi, NOW(), @idBaliza, @idBracelet);
 """
-
 
 COMANDO_InsertarNuevoRegistroHistorialUbicacion = """
 INSERT INTO baliza_historialubicacion 
