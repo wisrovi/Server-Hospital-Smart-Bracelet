@@ -85,7 +85,7 @@ WSGI_APPLICATION = 'authentication.wsgi.application'
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 from authentication.Config.DB import MARIADB, MARIADB2, SQLITE
-DATABASES = SQLITE
+DATABASES = MARIADB
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators

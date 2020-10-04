@@ -64,6 +64,8 @@ import time
 
 for _ in range(numero_envios):
     for dato in datos_balizas:
-        EnviarDatosURL(dato, port=5000)
+        EnviarDatosURL(dato, SERVER_USE='OFFICE', port=5000)
         time.sleep(0.05)
     print("**************************************")
+
+

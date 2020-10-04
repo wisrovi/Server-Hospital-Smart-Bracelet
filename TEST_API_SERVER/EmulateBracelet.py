@@ -15,7 +15,7 @@ def getLocalIp():
     return direccion_equipo
 
 
-@execute_in_thread(name="hilo emulador baliza")
+# @execute_in_thread(name="hilo emulador baliza")
 def EnviarDatosURL(paqueteEnviar, SERVER_USE="ME", port=8000):
     servidores = dict()
     servidores['OFFICE'] = ("172.16.66.84", 8000)
@@ -146,7 +146,7 @@ def CreateRandomBeacon(mac: str, rssi: int):
 
 
 beacons = list()
-beacons.append(CreateRandomBeacon(mac="B07E11FE91F4", rssi=52))
+beacons.append(CreateRandomBeacon(mac="B07E11FE91F4", rssi=70))
 
 balizas = list()
 balizas.append("4C11AE754045")
@@ -167,6 +167,6 @@ import time
 
 for _ in range(numero_envios):
     for dato in datos_balizas:
-        EnviarDatosURL(dato, port=5000)
+        EnviarDatosURL(dato, port=5000, SERVER_USE='PAUL')
         time.sleep(0.05)
     print("**************************************")

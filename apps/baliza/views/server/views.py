@@ -7,10 +7,10 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import FormView, ListView, TemplateView
 
-
 # Create your views here.
 from apps.baliza.models import Bracelet, HistorialBraceletSensors, Baliza, HistorialRSSI, \
     InstalacionBaliza, Piso, Area, BraceletPatienHospital, BraceletUmbrals
+from apps.baliza.views.server.Libraries.ConsultasBaseDatos.ConsultasMariaDB import *
 from apps.baliza.views.server.Libraries.ProcessSensorsData import NotifyBalizaNotExist, ExtractMac, NotifyPersonFallen, \
     NotifyPersonRemovedBracelet, NotifyTemperatureAlert, NotifyPpmAlert, DeterminarIgualdad_o_cercano, \
     NotifyBateryLevelLow, \
@@ -31,6 +31,7 @@ class DatoGraficaBubble:
         self.y = y
         self.tipo = tipo
 
+
 def ExtractMac(string):
     macPulsera_complete = string[0:2] \
                           + ":" + string[2:4] \
@@ -39,6 +40,40 @@ def ExtractMac(string):
                           + ":" + string[8:10] \
                           + ":" + string[10:12]
     return macPulsera_complete
+
+
+def decodeReceived(data):
+    import base64
+    string_pack = data.replace("*", "=")
+    string_pack = base64.b64decode(string_pack).decode("utf-8")
+    import json
+    data = json.loads(string_pack)
+    return data
+
+
+def ExtractKey(d):
+    import json
+    data_received = ""
+    keys = d.keys()
+    for key in keys:
+        key = str(key)
+        key = key.replace("'", '"')
+        # print(key)
+        data_received = json.loads(str(key))
+        return data_received
+
+
+def CloseOldConectionDB():
+    try:
+        connections.close_all()
+        close_old_connections()
+    except:
+        pass
+
+
+def setReceivedOK(request):
+    return render(request, 'Server/receivedOK.html', {})
+
 
 @method_decorator(login_required(login_url='signin'), name='dispatch')
 class VerPiso(TemplateView):
@@ -126,7 +161,7 @@ class FiltrarGraficaUbicacion(TemplateView):
                                 # ))
                                 # print(coordenadas[0], coordenadas[1])
                                 if area_seleccionada[0] < coordenadas[0] < area_seleccionada[2] and \
-                                    area_seleccionada[1] < coordenadas[1] < area_seleccionada[3]:
+                                        area_seleccionada[1] < coordenadas[1] < area_seleccionada[3]:
                                     elemento.append(baliza.macDispositivoBaliza)
                                     elemento.append(coordenadas[0])
                                     elemento.append(coordenadas[1])
@@ -191,7 +226,8 @@ class FiltrarGraficaUbicacion(TemplateView):
             elif action == 'search_sensors':
                 mac_bracelet = request.POST['mac']
                 this_bracelet = Bracelet.objects.get(macDispositivo=mac_bracelet)
-                historialSensores = HistorialBraceletSensors.objects.filter(bracelet=this_bracelet).order_by('-fechaRegistro')
+                historialSensores = HistorialBraceletSensors.objects.filter(bracelet=this_bracelet).order_by(
+                    '-fechaRegistro')
                 for hist in historialSensores:
                     data = dict()
                     data['ppm'] = hist.ppm_sensor
@@ -214,33 +250,6 @@ class FiltrarGraficaUbicacion(TemplateView):
         return context
 
 
-def decodeReceived(data):
-    import base64
-    string_pack = data.replace("*", "=")
-    string_pack = base64.b64decode(string_pack).decode("utf-8")
-    import json
-    data = json.loads(string_pack)
-    return data
-
-
-def ExtractKey(d):
-    import json
-    data_received = ""
-    keys = d.keys()
-    for key in keys:
-        key = str(key)
-        key = key.replace("'", '"')
-        # print(key)
-        data_received = json.loads(str(key))
-        return data_received
-
-
-def CloseOldConectionDB():
-    try:
-        connections.close_all()
-        close_old_connections()
-    except:
-        pass
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ServerReceivedCreateView(FormView):
@@ -262,22 +271,27 @@ class ServerReceivedCreateView(FormView):
                     listaDestinatarios = getDestinatariosCorreos()
 
                     if len(listaDestinatarios) > 0:
+                        findBaliza = False
                         try:
-                            thisBaliza = Baliza.objects.get(macDispositivoBaliza=baliza)
-                            print(thisBaliza)
-                            findBaliza = True
+                            thisBaliza = ReadDataBalizaByMac(baliza)[0]  # Baliza.objects.get(macDispositivoBaliza=baliza)
+                            print("baliza: ", thisBaliza)
+                            if len(thisBaliza) > 0:
+                                findBaliza = True
                         except:
-                            findBaliza = False
+                            print("Error leer baliza: ", baliza)
 
                         if findBaliza:
                             listBracelets = dataJson['beacons']
+                            if len(listBracelets) == 0:
+                                print("Sin braceles escaneados.")
                             for braceletJson in listBracelets:
                                 macBracelet = ExtractMac(braceletJson['MAC'])
                                 try:
-                                    thisBracelet = Bracelet.objects.get(macDispositivo=macBracelet)
-                                    print(thisBracelet)
+                                    thisBracelet = ReadDataBraceletByMac(macBracelet)[0] # Bracelet.objects.get(macDispositivo=macBracelet)
+                                    print("bracelet: ", thisBracelet)
                                     findBracelet = True
                                 except:
+                                    print("Error leer pulsera: ", macBracelet)
                                     findBracelet = False
 
                                 if findBracelet:
@@ -288,13 +302,14 @@ class ServerReceivedCreateView(FormView):
                                     caida_received_data = bool(int(braceletJson['CAI']))
                                     rssi_received_data = int(braceletJson['RSI'])
 
-                                    try:
-                                        paciente = BraceletPatienHospital.objects.get(bracelet=thisBracelet).idDatosPaciente
-                                    except:
-                                        paciente = str('<< Paciente >>')
+                                    # try:
+                                    #     paciente = ReadDataBraceletByMac(thisBracelet)[0]  # BraceletPatienHospital.objects.get( bracelet=thisBracelet).idDatosPaciente
+                                    # except:
+                                    #     paciente = str('<< Paciente >>')
 
                                     try:
-                                        hist = HistorialBraceletSensors.objects.order_by('-fechaRegistro').filter(bracelet=thisBracelet).first()
+                                        hist = ReadLastRegisterSensors(thisBracelet['id'])[0]   # HistorialBraceletSensors.objects.order_by('-fechaRegistro').filter( bracelet=thisBracelet).first()
+                                        print("sensors:", hist)
                                         if hist is not None:
                                             new_register_rssi = False
                                         else:
@@ -303,15 +318,21 @@ class ServerReceivedCreateView(FormView):
                                         new_register_rssi = True  # No hay historial, se crea el primer registro para este bracelet
 
                                     if not new_register_rssi:
-                                        ValidProximityForReport = hist.proximidad_sensor != proximity_received_data
+                                        ValidProximityForReport = hist['proximidad_sensor'] != proximity_received_data
                                         if proximity_received_data:
                                             VariationConstantBatery = 0.05
                                             VariationConstantPPM = 0.15
                                             VariationConstantTemperature = 0.10
-                                            ValidBateryForReport = not DeterminarIgualdad_o_cercano(hist.nivel_bateria, batery_received_data, VariationConstantBatery)
-                                            ValidTemperatureForReport = not DeterminarIgualdad_o_cercano(hist.temperatura_sensor, temperature_received_data, VariationConstantTemperature)
-                                            ValidPpmForReport = not DeterminarIgualdad_o_cercano(hist.ppm_sensor, ppm_received_data, VariationConstantPPM)
-                                            ValidDropForReport = hist.caida_sensor != caida_received_data
+                                            ValidBateryForReport = not DeterminarIgualdad_o_cercano(hist['nivel_bateria'],
+                                                                                                    batery_received_data,
+                                                                                                    VariationConstantBatery)
+                                            ValidTemperatureForReport = not DeterminarIgualdad_o_cercano(
+                                                hist['tempertura_sensor'], temperature_received_data,
+                                                VariationConstantTemperature)
+                                            ValidPpmForReport = not DeterminarIgualdad_o_cercano(hist['ppm_sensor'],
+                                                                                                 ppm_received_data,
+                                                                                                 VariationConstantPPM)
+                                            ValidDropForReport = hist['caida_sensor'] != caida_received_data
                                         else:
                                             ValidBateryForReport = False
                                             ValidTemperatureForReport = False
@@ -322,22 +343,31 @@ class ServerReceivedCreateView(FormView):
                                             new_register_rssi = True
 
                                     if new_register_rssi:
-                                        histNew = HistorialBraceletSensors()
-                                        histNew.bracelet = thisBracelet
-                                        histNew.baliza = thisBaliza
-                                        histNew.caida_sensor = caida_received_data
-                                        histNew.nivel_bateria = batery_received_data
-                                        histNew.proximidad_sensor = proximity_received_data
-                                        histNew.temperatura_sensor = temperature_received_data
-                                        histNew.rssi_signal = rssi_received_data
-                                        histNew.ppm_sensor = ppm_received_data
-                                        histNew.save()
+                                        InsertarNuevoDatoHistorialSensores(
+                                            idBracelet=thisBracelet['id'],
+                                            idBaliza=thisBaliza['id'],
+                                            temperatura=temperature_received_data,
+                                            bateria=batery_received_data,
+                                            caida=caida_received_data,
+                                            proximidad=proximity_received_data,
+                                            ppm=ppm_received_data
+                                        )
+                                        # histNew = HistorialBraceletSensors()
+                                        # histNew.bracelet = thisBracelet
+                                        # histNew.baliza = thisBaliza
+                                        # histNew.caida_sensor = caida_received_data
+                                        # histNew.nivel_bateria = batery_received_data
+                                        # histNew.proximidad_sensor = proximity_received_data
+                                        # histNew.temperatura_sensor = temperature_received_data
+                                        # histNew.rssi_signal = rssi_received_data
+                                        # histNew.ppm_sensor = ppm_received_data
+                                        # histNew.save()
 
                                     if not proximity_received_data:
-                                        NotifyPersonRemovedBracelet(macBracelet, request, listaDestinatarios, paciente)
+                                        NotifyPersonRemovedBracelet(macBracelet, request, listaDestinatarios, thisBracelet['idDatosPaciente'])
                                     else:
                                         if caida_received_data:
-                                            NotifyPersonFallen(macBracelet, request, listaDestinatarios, paciente)
+                                            NotifyPersonFallen(macBracelet, request, listaDestinatarios, thisBracelet['idDatosPaciente'])
 
                                         if batery_received_data <= minimo_nivel_bateria:
                                             NotifyBateryLevelLow(baliza, macBracelet, request, listaDestinatarios)
@@ -349,21 +379,29 @@ class ServerReceivedCreateView(FormView):
                                             thereUmbrals = False
 
                                         if thereUmbrals:
-                                            if (temperature_received_data >= umbrals.maximaTemperatura) or (temperature_received_data <= umbrals.minimaTemperatura):
-                                                NotifyTemperatureAlert(macBracelet, temperature_received_data, request, umbrals, listaDestinatarios)
+                                            if (temperature_received_data >= umbrals.maximaTemperatura) or (
+                                                    temperature_received_data <= umbrals.minimaTemperatura):
+                                                NotifyTemperatureAlert(macBracelet, temperature_received_data, request,
+                                                                       umbrals, listaDestinatarios)
 
-                                            if (ppm_received_data >= umbrals.maximaPulsoCardiaco) or (ppm_received_data <= umbrals.minimoPulsoCardiaco):
-                                                NotifyPpmAlert(macBracelet, ppm_received_data, request, umbrals, listaDestinatarios)
+                                            if (ppm_received_data >= umbrals.maximaPulsoCardiaco) or (
+                                                    ppm_received_data <= umbrals.minimoPulsoCardiaco):
+                                                NotifyPpmAlert(macBracelet, ppm_received_data, request, umbrals,
+                                                               listaDestinatarios)
 
                                     # print("Procesando datos de ubicación")
                                     ProcesarUbicacion(thisBaliza, thisBracelet, rssi_received_data)
+
+                                    CerrarConexionDB()
                                 else:
-                                    NotifyBraceletNotExist(macBracelet, request, listaDestinatarios)  # by send mail async: new Bracelet
+                                    NotifyBraceletNotExist(macBracelet, request,
+                                                           listaDestinatarios)  # by send mail async: new Bracelet
                         else:
                             NotifyBalizaNotExist(baliza, request, listaDestinatarios)  # by send mail async: new Baliza
                     else:
                         print()
-                        print("No hay usuario para destinar los correos de notificación, por favor registre un usuario.")
+                        print(
+                            "No hay usuario para destinar los correos de notificación, por favor registre un usuario.")
                         print()
                 else:
                     data['error'] = 'Error en datos, favor intentelo de nuevo'
@@ -378,10 +416,6 @@ class ServerReceivedCreateView(FormView):
         context['title'] = 'Recibir un dato de Baliza'
         context['entity'] = 'Crear Dato'
         return context
-
-
-def setReceivedOK(request):
-    return render(request, 'Server/receivedOK.html', {})
 
 
 @method_decorator(login_required(login_url='signin'), name='dispatch')
