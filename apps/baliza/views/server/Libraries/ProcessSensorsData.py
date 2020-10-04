@@ -295,12 +295,12 @@ def DeterminarIgualdad_o_cercano(valorAnterior, valorActual, variacion):
 
 
 def ActualizarAreaPosicion(pulsera):
-    CartesianoFinal, idsBalizasUsadas, pisoDeseado = DeterminarPocisionPulsera(pulsera)
+    CartesianoFinal, idsBalizasUsadas, pisoDeseado = DeterminarPocisionPulsera(pulsera['id'])
     if CartesianoFinal is not None:
-        print("ubicacion: ", CartesianoFinal, pisoDeseado, idsBalizasUsadas)
+        # print("ubicacion: ", CartesianoFinal, pisoDeseado, idsBalizasUsadas)
 
         todas_areas_este_piso = ReadAreasPorPiso(pisoDeseado)
-        print("areas: ", todas_areas_este_piso)
+        # print("areas: ", todas_areas_este_piso)
 
         for reg in todas_areas_este_piso:
             xi = float(reg['xInicial'])
@@ -315,15 +315,17 @@ def ActualizarAreaPosicion(pulsera):
                 actual_area = ReadIsInArea(pulsera['id'])
                 if len(actual_area) > 0:
                     actual_area = actual_area[0]
-                    print(actual_area)
+                    # print(actual_area)
                     if actual_area['fechaSalida'] == None:
                         if reg['id'] == actual_area['id_area']:
-                            print("Sigo en la misma area: ", actual_area['id_area'])
+                            # print("Sigo en la misma area: ", actual_area['id_area'])
+                            pass
                         else:
-                            print("He salido del area {} y entrado al area {}".format(str(actual_area['id_area']),
-                                                                                      str(reg['id'])))
+                            # print("He salido del area {} y entrado al area {}".format(str(actual_area['id_area']),                                                                                      str(reg['id'])))
                             UpdateDateOutArea(actual_area['id'])
                             InsertarNuevoRegistroHistorialUbicacion(reg['id'], pulsera['id'])
+                else:
+                    InsertarNuevoRegistroHistorialUbicacion(reg['id'], pulsera['id'])
                 break
 
     # if pisoDeseado is not None and False:
@@ -363,10 +365,10 @@ def ActualizarAreaPosicion(pulsera):
     #                             # print("la persona sigue en el area", are.area)
 
 
-@execute_in_thread(name="hilo ProcesarUbicacion")
+# @execute_in_thread(name="hilo ProcesarUbicacion")
 def ProcesarUbicacion(balizaNow, pulsera, rssi):
     ultimoRegistro = ReadLastRegisterByCalculateUbication(pulsera['id'])   # HistorialRSSI.objects.order_by('-fechaRegistro').filter(bracelet=pulsera, baliza=balizaNow).first()
-    print("rssi", ultimoRegistro)
+    # print("rssi", ultimoRegistro)
     if len(ultimoRegistro) > 0:
         ultimoRegistro = ultimoRegistro[0]
         if ultimoRegistro['id_bracelet'] == pulsera['id'] and ultimoRegistro['id_baliza'] == balizaNow['id'] and ultimoRegistro['rssi'] == rssi:
@@ -384,14 +386,13 @@ def ProcesarUbicacion(balizaNow, pulsera, rssi):
         # histoRssi.rssi_signal = rssi
         # histoRssi.save()
 
-
     ActualizarAreaPosicion(pulsera)
-    print("+++++++++++++++++++++++++++++++++++++++++++++++++")
+    # print("+++++++++++++++++++++++++++++++++++++++++++++++++")
 
 
 # @count_elapsed_time
-def DeterminarPocisionPulsera(pulsera, pisoDeseado=None):
-    ultimosRegistrosParaUbicacion = ReadLastRegisterByCalculateUbication(pulsera['id'])
+def DeterminarPocisionPulsera(idPulsera:int, pisoDeseado=None):
+    ultimosRegistrosParaUbicacion = ReadLastRegisterByCalculateUbication(idPulsera)
 
     RegistrosValidosParaProcesarUbicacion = list()
     if len(ultimosRegistrosParaUbicacion) > 0:
@@ -403,7 +404,7 @@ def DeterminarPocisionPulsera(pulsera, pisoDeseado=None):
                 pisoDeseado = reg['id_piso']
                 RegistrosValidosParaProcesarUbicacion.append(reg)
 
-    print("calcularUbicacion: ", len(RegistrosValidosParaProcesarUbicacion), RegistrosValidosParaProcesarUbicacion)
+    # print("calcularUbicacion: ", len(RegistrosValidosParaProcesarUbicacion), RegistrosValidosParaProcesarUbicacion)
     listadoBalizas = list()
     if len(RegistrosValidosParaProcesarUbicacion) == 3:
         for reg in RegistrosValidosParaProcesarUbicacion:

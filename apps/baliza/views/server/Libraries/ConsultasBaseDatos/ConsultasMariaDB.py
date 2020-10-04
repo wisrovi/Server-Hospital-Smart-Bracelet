@@ -263,7 +263,6 @@ def InsertarNuevoRegistroHistorialUbicacion(idArea:int, idBracelet:int):
     comando = comando.replace("@idArea", str(idArea))
     comando = comando.replace("@idBracelet", str(idBracelet))
 
-    print(comando)
     ALL_RESPONSE = InsertarMariaDB(comando)
     return ALL_RESPONSE
 

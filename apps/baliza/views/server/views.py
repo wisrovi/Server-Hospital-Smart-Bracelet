@@ -179,7 +179,7 @@ class FiltrarGraficaUbicacion(TemplateView):
                 tipoPulsera = "Manilla"
                 todasLasPulseras = Bracelet.objects.all()
                 for pulsera in todasLasPulseras:
-                    CartesianoFinal, idsBalizasUsadas, pisoDeseado = DeterminarPocisionPulsera(pulsera,
+                    CartesianoFinal, idsBalizasUsadas, pisoDeseado = DeterminarPocisionPulsera(pulsera.id,
                                                                                                pisoDeseado=piso)
                     if CartesianoFinal is not None:
                         constantePresicion = 6
@@ -274,7 +274,7 @@ class ServerReceivedCreateView(FormView):
                         findBaliza = False
                         try:
                             thisBaliza = ReadDataBalizaByMac(baliza)[0]  # Baliza.objects.get(macDispositivoBaliza=baliza)
-                            print("baliza: ", thisBaliza)
+                            # print("baliza: ", thisBaliza)
                             if len(thisBaliza) > 0:
                                 findBaliza = True
                         except:
@@ -288,7 +288,7 @@ class ServerReceivedCreateView(FormView):
                                 macBracelet = ExtractMac(braceletJson['MAC'])
                                 try:
                                     thisBracelet = ReadDataBraceletByMac(macBracelet)[0] # Bracelet.objects.get(macDispositivo=macBracelet)
-                                    print("bracelet: ", thisBracelet)
+                                    # print("bracelet: ", thisBracelet)
                                     findBracelet = True
                                 except:
                                     print("Error leer pulsera: ", macBracelet)
@@ -309,7 +309,7 @@ class ServerReceivedCreateView(FormView):
 
                                     try:
                                         hist = ReadLastRegisterSensors(thisBracelet['id'])[0]   # HistorialBraceletSensors.objects.order_by('-fechaRegistro').filter( bracelet=thisBracelet).first()
-                                        print("sensors:", hist)
+                                        # print("sensors:", hist)
                                         if hist is not None:
                                             new_register_rssi = False
                                         else:
@@ -392,7 +392,7 @@ class ServerReceivedCreateView(FormView):
                                     # print("Procesando datos de ubicación")
                                     ProcesarUbicacion(thisBaliza, thisBracelet, rssi_received_data)
 
-                                    CerrarConexionDB()
+                                    # CerrarConexionDB() #no hace falta
                                 else:
                                     NotifyBraceletNotExist(macBracelet, request,
                                                            listaDestinatarios)  # by send mail async: new Bracelet
