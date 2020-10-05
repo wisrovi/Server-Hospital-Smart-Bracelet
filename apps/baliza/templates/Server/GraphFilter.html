@@ -58,6 +58,7 @@
     </script>
 
     <script type="text/javascript">
+        var id;
         google.charts.load('current', {'packages': ['corechart']});
         google.charts.setOnLoadCallback(drawSeriesChart);
 
@@ -206,8 +207,8 @@
                                 '<b>PPM: </b>' + ppm + '<br/>' +
                                 '<b>Bateria: </b>' + bat + '<br/>' +
                                 '<b>Postura Pulsera: </b>' + pro + '<br/>' +
-                                '<b>Ubicacion: </b>' + bat + '<br/>' +
-                                '<b>Paciente: </b>' + bat + '<br/>' +
+                                '<b>Ubicacion: </b>' + id + '<br/>' +
+                                {#'<b>Paciente: </b>' + bat + '<br/>' +#}
                                 '<b>Fecha Registro : </b>' + fec + '<br/><br/>',
                             showCloseButton: true,
                             focusConfirm: false,
@@ -236,7 +237,6 @@
 
 
         $(function () {
-            var id;
             var area_seleccionada = "";
             var frecuencia_escaneo = 2000;
 

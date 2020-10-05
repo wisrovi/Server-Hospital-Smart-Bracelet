@@ -288,9 +288,9 @@ class FiltrarGraficaUbicacion(TemplateView):
                     data['ppm'] = hist.ppm_sensor
                     data['pro'] = hist.proximidad_sensor
                     data['cai'] = hist.caida_sensor
-                    data['temp'] = hist.temperatura_sensor
-                    data['bat'] = hist.nivel_bateria
-                    data['fec'] = hist.fechaRegistro
+                    data['temp'] = float(hist.temperatura_sensor) / 10
+                    data['bat'] = float(hist.nivel_bateria) / 10
+                    data['fec'] = str(hist.fechaRegistro).replace("T", " ").replace("+00:00", "")
                     break
             else:
                 data['error'] = 'Ha ocurrido un error'
