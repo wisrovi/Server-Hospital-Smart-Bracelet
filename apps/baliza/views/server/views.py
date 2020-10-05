@@ -227,8 +227,8 @@ class FiltrarGraficaUbicacion(TemplateView):
                             elemento.append(int(ubicacionEstaPulsera['cartesiano'][1]))
                             elemento.append("Manilla")
                             ubicacionesPulserasPlano.append(elemento)
-                        except:
-                            pass
+                        except Exception as e:
+                            print(e)
 
 
                 # tipoPulsera = "Manilla"
@@ -296,6 +296,7 @@ class FiltrarGraficaUbicacion(TemplateView):
                 data['error'] = 'Ha ocurrido un error'
         except Exception as e:
             data['error'] = str(e)
+            print(e)
         return JsonResponse(data, safe=False)
 
     def get_context_data(self, **kwargs):

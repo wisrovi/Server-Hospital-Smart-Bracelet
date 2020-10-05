@@ -130,6 +130,7 @@ def NotifyBalizaNotExist(baliza, request, listaDestinatarios):
 
         asunto = "Nueva Baliza por registrar (" + baliza + ")"
 
+        print(listaDestinatarios)
         respond = Utilities.sendMail(asunto, html_message, imagenes_en_html, listaDestinatarios, request)
         if respond:
             print("Nueva Baliza encontrada: ", baliza)
